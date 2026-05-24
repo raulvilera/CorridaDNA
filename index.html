@@ -1,0 +1,1001 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PIT STOP GENÉTICO – Corrida Interativa | 9º Ano</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Exo 2',sans-serif;}
+
+/* ── SCREENS ── */
+#screen-select,#screen-game,#screen-finish{position:fixed;inset:0;z-index:10;}
+#screen-select{background:linear-gradient(135deg,#070710,#0d1535,#070710);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;overflow-y:auto;padding:20px 0;}
+#screen-game{display:none;}
+#screen-finish{background:radial-gradient(circle,#0d1535,#000);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px;}
+
+/* ── CHECKER STRIPE ── */
+.checker-bar{display:flex;height:14px;flex-shrink:0;}
+.checker-bar div{flex:1;height:14px;}
+
+/* ── SCHOOL HEADER ── */
+.school-header{text-align:center;}
+.school-name{font-family:'Exo 2',sans-serif;font-size:1.3rem;font-weight:700;color:#f0f4ff;letter-spacing:1px;}
+.school-sub{font-size:.68rem;color:#556688;text-transform:uppercase;letter-spacing:.15em;margin-top:3px;}
+
+/* ── SELECT SCREEN ── */
+.hero-title{font-family:'Orbitron',sans-serif;font-size:2rem;font-weight:900;color:#ffd000;text-shadow:0 0 40px rgba(255,208,0,.8);letter-spacing:4px;text-align:center;}
+.hero-sub{font-family:'Orbitron',sans-serif;font-size:.7rem;color:rgba(255,255,255,.5);letter-spacing:6px;text-align:center;}
+.form-card{background:rgba(16,18,38,.95);border:1px solid rgba(255,208,0,.2);border-radius:20px;padding:28px 32px;width:100%;max-width:500px;display:flex;flex-direction:column;gap:14px;}
+.field-label{font-family:'Orbitron',sans-serif;font-size:.62rem;color:#ffd000;letter-spacing:.12em;margin-bottom:5px;}
+select,input[type=text]{width:100%;padding:10px 14px;border:1.5px solid rgba(255,208,0,.3);border-radius:10px;background:rgba(255,255,255,.04);color:#f0f4ff;font-family:'Exo 2',sans-serif;font-size:.9rem;outline:none;transition:.2s;}
+select:focus,input[type=text]:focus{border-color:#ffd000;box-shadow:0 0 0 3px rgba(255,208,0,.15);}
+select option{background:#0d0d20;color:#fff;}
+.btn-start{padding:16px 40px;background:linear-gradient(135deg,#e8001a,#8b0010);color:#fff;border:none;border-radius:50px;font-family:'Orbitron',sans-serif;font-size:.9rem;font-weight:700;letter-spacing:.15em;cursor:pointer;box-shadow:0 6px 0 #4a0008,0 0 30px rgba(232,0,26,.4);transition:.1s;}
+.btn-start:active{transform:translateY(4px);box-shadow:0 2px 0 #4a0008;}
+.controls-hint{display:flex;gap:16px;align-items:center;justify-content:center;flex-wrap:wrap;}
+.key-badge{background:rgba(255,208,0,.1);border:1px solid rgba(255,208,0,.4);border-radius:8px;padding:6px 14px;font-family:'Orbitron',sans-serif;font-size:.65rem;color:#ffd000;letter-spacing:.08em;}
+
+/* ── GAME HUD ── */
+#hud{position:fixed;top:0;left:0;right:0;z-index:50;pointer-events:none;}
+.hud-top{display:flex;align-items:stretch;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);border-bottom:2px solid rgba(255,208,0,.3);}
+.hud-box{padding:8px 16px;border-right:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:2px;}
+.hud-box:last-child{border-right:none;}
+.hud-label{font-family:'Orbitron',sans-serif;font-size:.55rem;color:#556688;letter-spacing:.1em;text-transform:uppercase;}
+.hud-val{font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;color:#ffd000;}
+#hud-pos-val{font-size:1.3rem;}
+.hud-flex{flex:1;}
+#speed-bar-wrap{height:6px;background:rgba(255,255,255,.1);border-radius:4px;margin-top:4px;overflow:hidden;}
+#speed-bar{height:100%;width:0%;background:linear-gradient(90deg,#00e87a,#ffd000,#e8001a);border-radius:4px;transition:width .1s;}
+.hud-mini-map{width:120px;padding:6px 10px;display:flex;align-items:center;justify-content:center;}
+#mini-canvas{border-radius:6px;border:1px solid rgba(255,208,0,.3);}
+
+/* ── QUESTION OVERLAY ── */
+#question-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:16px;}
+#question-overlay.show{display:flex;}
+.q-card{background:linear-gradient(135deg,#0d1025,#101530);border:2px solid #ffd000;border-radius:24px;padding:28px 28px 22px;max-width:560px;width:100%;box-shadow:0 0 80px rgba(255,208,0,.25);animation:slideUp .3s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.q-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.q-num-badge{width:44px;height:44px;background:linear-gradient(145deg,#e8001a,#8b0010);color:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:900;flex-shrink:0;}
+.q-title{font-family:'Orbitron',sans-serif;font-size:.65rem;color:#ffd000;letter-spacing:.12em;text-transform:uppercase;}
+.q-context{background:rgba(255,208,0,.07);border-left:3px solid rgba(255,208,0,.5);border-radius:0 10px 10px 0;padding:8px 14px;font-size:.8rem;color:rgba(255,255,255,.6);font-style:italic;margin-bottom:12px;line-height:1.5;}
+.q-text{font-size:.95rem;color:#f0f4ff;line-height:1.6;margin-bottom:16px;}
+.q-text strong{color:#ffd000;}
+.q-options{display:flex;flex-direction:column;gap:8px;}
+.q-opt{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;border:1.5px solid rgba(255,255,255,.1);border-radius:12px;cursor:pointer;transition:all .2s;font-size:.88rem;color:rgba(255,255,255,.85);background:rgba(255,255,255,.03);}
+.q-opt:hover{border-color:#ffd000;background:rgba(255,208,0,.08);transform:translateX(4px);}
+.q-opt.correct{border-color:#00e87a!important;background:rgba(0,232,122,.15)!important;color:#00e87a!important;}
+.q-opt.wrong{border-color:#e8001a!important;background:rgba(232,0,26,.15)!important;color:#ff6677!important;}
+.opt-letter{flex-shrink:0;width:28px;height:28px;border:1.5px solid rgba(255,255,255,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:.75rem;font-weight:700;color:#8899bb;}
+.q-feedback{text-align:center;padding:10px;border-radius:10px;font-family:'Orbitron',sans-serif;font-size:.8rem;letter-spacing:.08em;display:none;margin-top:10px;}
+.q-feedback.ok{display:block;color:#00e87a;background:rgba(0,232,122,.1);border:1px solid rgba(0,232,122,.3);}
+.q-feedback.fail{display:block;color:#ff6677;background:rgba(232,0,26,.1);border:1px solid rgba(232,0,26,.3);}
+#q-timer-bar{height:5px;background:rgba(255,255,255,.1);border-radius:4px;margin-bottom:14px;overflow:hidden;}
+#q-timer-inner{height:100%;background:#ffd000;border-radius:4px;width:100%;transition:width linear;}
+
+/* ── TOAST NOTIFICATIONS ── */
+#toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:300;pointer-events:none;}
+.toast-msg{padding:12px 24px;border-radius:40px;font-family:'Orbitron',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-align:center;animation:toastIn .3s ease;margin-bottom:8px;}
+.toast-msg.gain{background:rgba(0,232,122,.95);color:#003322;box-shadow:0 4px 20px rgba(0,232,122,.4);}
+.toast-msg.lose{background:rgba(232,0,26,.95);color:#fff;box-shadow:0 4px 20px rgba(232,0,26,.4);}
+.toast-msg.info{background:rgba(0,102,255,.9);color:#fff;}
+@keyframes toastIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── FINISH SCREEN ── */
+.finish-flag{font-size:5rem;animation:flagBounce 1s ease infinite;}
+@keyframes flagBounce{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.finish-title{font-family:'Orbitron',sans-serif;font-size:2rem;font-weight:900;color:#ffd000;text-shadow:0 0 40px rgba(255,208,0,.8);text-align:center;}
+.finish-pos{font-family:'Orbitron',sans-serif;font-size:4rem;font-weight:900;color:#fff;}
+.finish-pos span{color:#ffd000;}
+.finish-nota{font-family:'Orbitron',sans-serif;font-size:1.2rem;color:#ffd000;letter-spacing:.1em;}
+.finish-detail{font-size:.9rem;color:#8899bb;text-align:center;max-width:400px;line-height:1.6;}
+.stars-row{font-size:2.5rem;letter-spacing:4px;}
+.finish-btns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:8px;}
+.btn-finish{padding:13px 30px;border:none;border-radius:40px;font-family:'Orbitron',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.1em;cursor:pointer;transition:.1s;}
+.btn-play-again{background:linear-gradient(135deg,#e8001a,#8b0010);color:#fff;box-shadow:0 5px 0 #4a0008;}
+.btn-play-again:active{transform:translateY(3px);}
+.btn-send{background:rgba(255,208,0,.15);color:#ffd000;border:1.5px solid rgba(255,208,0,.4);}
+
+/* ── SEND STATUS ── */
+#send-status{font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:.08em;padding:10px 20px;border-radius:10px;display:none;}
+#send-status.ok{display:block;background:rgba(0,232,122,.1);color:#00e87a;border:1px solid rgba(0,232,122,.3);}
+#send-status.fail{display:block;background:rgba(232,0,26,.1);color:#ff6677;border:1px solid rgba(232,0,26,.3);}
+#send-status.loading{display:block;background:rgba(255,208,0,.08);color:#ffd000;border:1px solid rgba(255,208,0,.3);}
+</style>
+</head>
+<body>
+
+<!-- ══════════ SELECT SCREEN ══════════ -->
+<div id="screen-select">
+  <div class="checker-bar" id="cb1"></div>
+  <div style="background:#050508;padding:14px 24px;width:100%;text-align:center;border-bottom:2px solid #ffd000;">
+    <div class="school-name">E.E. Profª Wanda Mascagni de Sá</div>
+    <div class="school-sub">Secretaria da Educação do Estado de São Paulo · SEDUC-SP</div>
+  </div>
+  <div class="hero-title">🏁 PIT STOP GENÉTICO</div>
+  <div class="hero-sub">CORRIDA DO CONHECIMENTO · 2º BIMESTRE · 9º ANO</div>
+  <div class="form-card">
+    <div>
+      <div class="field-label">🏎 Piloto</div>
+      <select id="sel-nome" onchange="fillDriver()">
+        <option value="">— Selecione seu nome —</option>
+        <option value="0">NICOLAS PENTEADO — Nº 25 · 9º Ano B</option>
+        <option value="1">YURI GABRIEL DE MORAES PONGOLINO — Nº 41 · 9º Ano A</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:12px;">
+      <div style="flex:1;">
+        <div class="field-label">Nº</div>
+        <input type="text" id="inp-num" readonly style="cursor:default;text-align:center;">
+      </div>
+      <div style="flex:2;">
+        <div class="field-label">Turma</div>
+        <input type="text" id="inp-serie" readonly>
+      </div>
+      <div style="flex:2;">
+        <div class="field-label">Data</div>
+        <input type="text" id="inp-data" placeholder="dd/mm/aaaa">
+      </div>
+    </div>
+    <div style="margin-top:4px;">
+      <div class="field-label" style="margin-bottom:8px;">CONTROLES</div>
+      <div class="controls-hint">
+        <div class="key-badge">⬅ ➡ Direção</div>
+        <div class="key-badge">⬆ Acelerar</div>
+        <div class="key-badge">⬇ Frear</div>
+        <div class="key-badge">📱 Botões na tela</div>
+      </div>
+    </div>
+    <button class="btn-start" onclick="startGame()">▶ ACELERAR — INICIAR CORRIDA</button>
+  </div>
+  <div class="checker-bar" id="cb2"></div>
+</div>
+
+<!-- ══════════ GAME SCREEN ══════════ -->
+<div id="screen-game">
+  <canvas id="game-canvas" style="display:block;width:100%;height:100%;"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-top">
+      <div class="hud-box">
+        <div class="hud-label">Posição</div>
+        <div class="hud-val" id="hud-pos-val">1º</div>
+      </div>
+      <div class="hud-box hud-flex">
+        <div class="hud-label">Velocidade</div>
+        <div class="hud-val" id="hud-speed-val">0 km/h</div>
+        <div id="speed-bar-wrap"><div id="speed-bar"></div></div>
+      </div>
+      <div class="hud-box">
+        <div class="hud-label">Questões</div>
+        <div class="hud-val" id="hud-q-val">0/10</div>
+      </div>
+      <div class="hud-box">
+        <div class="hud-label">Certas</div>
+        <div class="hud-val" style="color:#00e87a;" id="hud-correct-val">0</div>
+      </div>
+      <div class="hud-box hud-mini-map">
+        <canvas id="mini-canvas" width="100" height="60"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile controls -->
+  <div id="mobile-controls" style="position:fixed;bottom:20px;left:0;right:0;z-index:100;display:flex;justify-content:space-between;padding:0 20px;pointer-events:none;">
+    <div style="display:flex;gap:10px;pointer-events:all;">
+      <button id="btn-left" style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);color:#fff;font-size:1.4rem;cursor:pointer;touch-action:none;">◀</button>
+      <button id="btn-right" style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);color:#fff;font-size:1.4rem;cursor:pointer;touch-action:none;">▶</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;pointer-events:all;">
+      <button id="btn-accel" style="width:60px;height:60px;border-radius:50%;background:rgba(0,232,122,.25);border:2px solid rgba(0,232,122,.5);color:#00e87a;font-size:1.4rem;cursor:pointer;touch-action:none;">▲</button>
+      <button id="btn-brake" style="width:60px;height:60px;border-radius:50%;background:rgba(232,0,26,.2);border:2px solid rgba(232,0,26,.4);color:#ff4455;font-size:1.4rem;cursor:pointer;touch-action:none;">▼</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ QUESTION OVERLAY ══════════ -->
+<div id="question-overlay">
+  <div class="q-card">
+    <div id="q-timer-bar"><div id="q-timer-inner"></div></div>
+    <div class="q-header">
+      <div class="q-num-badge" id="q-num-badge">1</div>
+      <div>
+        <div class="q-title" id="q-title">Múltipla Escolha</div>
+        <div style="font-size:.75rem;color:#556688;margin-top:2px;" id="q-lap">Volta 1</div>
+      </div>
+    </div>
+    <div class="q-context" id="q-context"></div>
+    <div class="q-text" id="q-text"></div>
+    <div class="q-options" id="q-options"></div>
+    <div class="q-feedback" id="q-feedback"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ══════════ FINISH SCREEN ══════════ -->
+<div id="screen-finish">
+  <div class="finish-flag">🏁</div>
+  <div class="finish-title">CORRIDA ENCERRADA!</div>
+  <div class="finish-pos">POSIÇÃO <span id="fin-pos">1º</span></div>
+  <div class="stars-row" id="fin-stars">⭐⭐⭐</div>
+  <div class="finish-nota" id="fin-nota">ACERTOS: 0/10</div>
+  <div class="finish-detail" id="fin-detail"></div>
+  <div class="finish-btns">
+    <button class="btn-finish btn-play-again" onclick="restartGame()">🔄 NOVA CORRIDA</button>
+    <button class="btn-finish btn-send" onclick="sendResults()">📤 ENVIAR RESULTADOS</button>
+  </div>
+  <div id="send-status"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════════
+const ALUNOS=[
+  {nome:"NICOLAS PENTEADO",numero:25,serie:"9º Ano B"},
+  {nome:"YURI GABRIEL DE MORAES PONGOLINO",numero:41,serie:"9º Ano A"}
+];
+const GAS_URL="https://script.google.com/macros/s/AKfycbyERmYA0s2pKTrz47WrXoP52JVcfZL0pnJwyTwBdC_rpfzi5e3xx24pXfZTSUnAEuZB/exec";
+
+const QUESTIONS=[
+  {id:1,tipo:"me",context:"🏎 O carro (filho) recebe peças dos dois pit crews (pais) pelos gametas na fecundação.",
+   text:"<strong>DNA e Hereditariedade:</strong> Na corrida da vida, como o filho herda o material genético?",
+   opts:["O filho herda 100% do DNA da mãe, pois o óvulo é a peça maior.",
+         "Cada progenitor contribui com 50% do DNA — dois mecânicos montando metade do carro cada um.",
+         "O DNA é transmitido apenas pelos cromossomos autossomos, nunca pelos sexuais.",
+         "Os gametas são diploides, então o filho nasce com quatro vezes mais cromossomos."],
+   answer:1},
+  {id:2,tipo:"me",context:"⚙ Nucleotídeo = 3 peças essenciais, como o trio motor/câmbio/diferencial de um F1.",
+   text:"<strong>Nucleotídeo:</strong> Quais são as três partes que compõem um nucleotídeo?",
+   opts:["Glicose, lipídeo e proteína",
+         "Fosfato, açúcar (desoxirribose) e base nitrogenada",
+         "Aminoácido, ribose e enzima",
+         "Adenina, Timina e RNA polimerase"],
+   answer:1},
+  {id:3,tipo:"me",context:"🔄 As bases do DNA são como peças de encaixe: A·T e C·G — sem par certo, o motor falha!",
+   text:"<strong>Bases Nitrogenadas:</strong> A fita A-T-C-G-A tem qual fita complementar?",
+   opts:["A-T-C-G-A (idêntica, como copiar o mesmo carro)",
+         "U-A-G-C-U (com Uracila — isso é RNA!)",
+         "T-A-G-C-T (A-T e C-G — regras do chassis)",
+         "G-C-A-T-G (invertida sem critério)"],
+   answer:2},
+  {id:4,tipo:"me",context:"👩‍🔬 Rosalind Franklin = mecânica invisível dos bastidores que nunca aparecia nas fotos do pódio.",
+   text:"<strong>Rosalind Franklin:</strong> Qual foi sua contribuição para a descoberta do DNA?",
+   opts:["Criou o modelo da dupla hélice junto com Watson e Crick, dividindo o Nobel.",
+         "Produziu a Foto 51 por difração de raios-X que revelou a estrutura helicoidal do DNA.",
+         "Descobriu as bases nitrogenadas A, T, C e G pela primeira vez.",
+         "Sintetizou o DNA artificialmente em laboratório pela primeira vez."],
+   answer:1},
+  {id:5,tipo:"me",context:"🔧 Histonas = carretéis que enrolam o 'cabo' de DNA para caber no núcleo (capacete do piloto).",
+   text:"<strong>Cromatina:</strong> Como o DNA se organiza para caber no núcleo celular?",
+   opts:["O DNA se enrola em proteínas histonas formando nucleossomos, compactados em cromatina.",
+         "A heterocromatina é a forma menos compactada — o cabo solto no pit lane.",
+         "Os nucleossomos são formados apenas por DNA, sem proteínas — carretel vazio.",
+         "A compactação impede completamente que os genes funcionem."],
+   answer:0},
+  {id:6,tipo:"me",context:"🚦 Diploide (2n=46) = carro completo. Haploide (n=23) = metade do carro. Na fecundação, dois meios formam um inteiro!",
+   text:"<strong>Haploides e Diploides:</strong> Qual célula humana é haploide?",
+   opts:["Neurônio (célula nervosa)",
+         "Hepatócito (célula do fígado)",
+         "Gameta (óvulo ou espermatozoide)",
+         "Eritrócito maduro (glóbulo vermelho)"],
+   answer:2},
+  {id:7,tipo:"me",context:"📊 O cariótipo é o painel de controle: mostra todos os sistemas (cromossomos) organizados em pares.",
+   text:"<strong>Cariótipo Humano:</strong> Quantos cromossomos tem uma célula somática humana normal?",
+   opts:["23 cromossomos (haploides)",
+         "92 cromossomos (tetraploides)",
+         "46 cromossomos: 22 pares autossomos + 1 par sexual (XX ou XY)",
+         "48 cromossomos, como outros primatas"],
+   answer:2},
+  {id:8,tipo:"me",context:"🛞 Eucromatina = TURBO ligado (genes ativos). Heterocromatina = modo ECO (genes silenciados).",
+   text:"<strong>Diferenciação Celular:</strong> Por que células com o mesmo DNA têm funções diferentes?",
+   opts:["Porque cada célula perde parte do DNA ao se dividir.",
+         "Porque diferentes genes são ativados (eucromatina) ou silenciados (heterocromatina) em cada tipo celular.",
+         "Porque o DNA muda de sequência após a divisão celular.",
+         "Porque apenas células-tronco possuem DNA completo."],
+   answer:1},
+  {id:9,tipo:"me",context:"🏗 Cromossomo = chassis: duas cromátides-irmãs unidas pelo centrômero (pino central), braços podem ser assimétricos.",
+   text:"<strong>Estrutura dos Cromossomos:</strong> O que são cromátides-irmãs?",
+   opts:["Cromossomos completamente diferentes, de origens distintas.",
+         "As duas cópias idênticas de um cromossomo replicado, unidas pelo centrômero.",
+         "Os dois cromossomos homólogos de um par durante a meiose.",
+         "Fragmentos de DNA quebrados durante a mitose."],
+   answer:1},
+  {id:10,tipo:"me",context:"🏆 Do parafuso ao carro inteiro: Nucleotídeo → DNA → Nucleossomo → Cromatina → Cromossomo.",
+   text:"<strong>Hierarquia do DNA:</strong> Qual a ordem correta de organização do material genético?",
+   opts:["Cromossomo → Cromatina → Nucleossomo → DNA → Nucleotídeo",
+         "Nucleotídeo → RNA → Proteína → Cromossomo → Núcleo",
+         "Nucleotídeo → DNA → Nucleossomo → Cromatina → Cromossomo",
+         "Gene → Alelo → Locus → Genoma → Cariótipo"],
+   answer:2}
+];
+
+// ═══════════════════════════════════════════════
+//  SELECT SCREEN SETUP
+// ═══════════════════════════════════════════════
+function makeChecker(id){
+  const el=document.getElementById(id);
+  let h='';
+  for(let i=0;i<60;i++) h+=`<div style="background:${i%2?'#000':'#fff'}"></div>`;
+  el.innerHTML=h;
+}
+makeChecker('cb1'); makeChecker('cb2');
+
+function fillDriver(){
+  const v=document.getElementById('sel-nome').value;
+  if(v===''){
+    document.getElementById('inp-num').value='';
+    document.getElementById('inp-serie').value='';
+  } else {
+    const a=ALUNOS[+v];
+    document.getElementById('inp-num').value=a.numero;
+    document.getElementById('inp-serie').value=a.serie;
+  }
+}
+
+window.addEventListener('load',()=>{
+  const h=new Date();
+  document.getElementById('inp-data').value=
+    String(h.getDate()).padStart(2,'0')+'/'+String(h.getMonth()+1).padStart(2,'0')+'/'+h.getFullYear();
+});
+
+// ═══════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════
+let playerData={},gameRunning=false,gamePaused=false;
+let answers=[],currentQIdx=0,correctCount=0;
+let questionShowing=false,questionTimer=null,qTimerW=100;
+
+// Car objects
+let player={x:0,y:0,angle:0,speed:0,trail:[]};
+let bots=[];
+const BOT_COLORS=['#0055ff','#00cc44','#ff6600'];
+const BOT_NAMES=['WATSON','CRICK','MENDEL'];
+
+// Track
+const TRACK_CX=0,TRACK_CY=0,TRACK_RX=380,TRACK_RY=200,TRACK_W=80;
+let trackCheckpoints=[];
+let questionTriggers=[];
+
+// Render
+let canvas,ctx,miniCtx;
+let camX=0,camY=0;
+let animId;
+
+// Keys
+const keys={};
+
+// Question spawn positions (evenly on track)
+function getTrackPoint(t){
+  return {
+    x: TRACK_CX + TRACK_RX * Math.cos(t),
+    y: TRACK_CY + TRACK_RY * Math.sin(t)
+  };
+}
+
+function buildTrack(){
+  trackCheckpoints=[];
+  for(let i=0;i<200;i++){
+    const t=(i/200)*Math.PI*2;
+    trackCheckpoints.push(getTrackPoint(t));
+  }
+  // 10 question triggers evenly spaced
+  questionTriggers=[];
+  for(let i=0;i<10;i++){
+    const t=(i/10)*Math.PI*2 + 0.3;
+    const p=getTrackPoint(t);
+    questionTriggers.push({
+      x:p.x, y:p.y,
+      triggered:false,
+      qIndex:i,
+      radius:40
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  START GAME
+// ═══════════════════════════════════════════════
+function startGame(){
+  const v=document.getElementById('sel-nome').value;
+  const data=document.getElementById('inp-data').value.trim();
+  if(v===''||data===''){
+    alert('Selecione seu nome e confirme a data!'); return;
+  }
+  playerData={...ALUNOS[+v], data, idx:+v};
+  answers=[];
+  currentQIdx=0;
+  correctCount=0;
+
+  document.getElementById('screen-select').style.display='none';
+  document.getElementById('screen-game').style.display='block';
+
+  initGame();
+}
+
+function initGame(){
+  canvas=document.getElementById('game-canvas');
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+  ctx=canvas.getContext('2d');
+  miniCtx=document.getElementById('mini-canvas').getContext('2d');
+
+  buildTrack();
+
+  // Start position
+  player={x:TRACK_CX+TRACK_RX,y:TRACK_CY,angle:-Math.PI/2,speed:0,trail:[],lap:0,trackT:0};
+
+  // Bots
+  bots=BOT_NAMES.map((name,i)=>({
+    name, color:BOT_COLORS[i],
+    x:TRACK_CX+TRACK_RX, y:TRACK_CY-(i+1)*70,
+    angle:-Math.PI/2,
+    speed: 2.5+i*0.3,
+    trackT: -(i+1)*0.12,
+    penalty:0,
+    trail:[]
+  }));
+
+  setupInput();
+  gameRunning=true;
+  gamePaused=false;
+  questionShowing=false;
+  questionTriggers.forEach(q=>q.triggered=false);
+
+  if(animId) cancelAnimationFrame(animId);
+  gameLoop();
+}
+
+function setupInput(){
+  document.addEventListener('keydown',e=>{keys[e.key]=true;});
+  document.addEventListener('keyup',e=>{keys[e.key]=false;});
+  // Mobile buttons
+  const pairs=[['btn-left','ArrowLeft'],['btn-right','ArrowRight'],['btn-accel','ArrowUp'],['btn-brake','ArrowDown']];
+  pairs.forEach(([id,key])=>{
+    const btn=document.getElementById(id);
+    btn.addEventListener('touchstart',e=>{e.preventDefault();keys[key]=true;},{passive:false});
+    btn.addEventListener('touchend',e=>{e.preventDefault();keys[key]=false;},{passive:false});
+    btn.addEventListener('mousedown',()=>keys[key]=true);
+    btn.addEventListener('mouseup',()=>keys[key]=false);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  GAME LOOP
+// ═══════════════════════════════════════════════
+function gameLoop(){
+  if(!gameRunning) return;
+  if(!gamePaused) update();
+  render();
+  animId=requestAnimationFrame(gameLoop);
+}
+
+function update(){
+  // Player input
+  const ACCEL=0.12, BRAKE=0.18, TURN=0.045, FRICTION=0.97, MAX_SPEED=7;
+
+  if(keys['ArrowUp']||keys['w']) player.speed=Math.min(player.speed+ACCEL, MAX_SPEED);
+  else if(keys['ArrowDown']||keys['s']) player.speed=Math.max(player.speed-BRAKE, -2);
+  else player.speed*=FRICTION;
+
+  if(Math.abs(player.speed)>0.1){
+    const turn=TURN*(player.speed/MAX_SPEED);
+    if(keys['ArrowLeft']||keys['a']) player.angle-=turn;
+    if(keys['ArrowRight']||keys['d']) player.angle+=turn;
+  }
+
+  player.trail.push({x:player.x,y:player.y});
+  if(player.trail.length>30) player.trail.shift();
+  player.x+=Math.cos(player.angle)*player.speed;
+  player.y+=Math.sin(player.angle)*player.speed;
+
+  // Track bounds (push back if too far from track center)
+  const dist=distToTrackCenter(player.x,player.y);
+  if(dist>TRACK_W/2+15){
+    // Slow down on grass
+    player.speed*=0.88;
+  }
+
+  // Bots follow track
+  bots.forEach(bot=>{
+    if(bot.penalty>0){bot.penalty--;return;}
+    bot.trackT+=bot.speed*0.003;
+    const target=getTrackPoint(bot.trackT);
+    const dx=target.x-bot.x, dy=target.y-bot.y;
+    bot.angle=Math.atan2(dy,dx);
+    bot.trail.push({x:bot.x,y:bot.y});
+    if(bot.trail.length>20) bot.trail.shift();
+    bot.x+=Math.cos(bot.angle)*bot.speed;
+    bot.y+=Math.sin(bot.angle)*bot.speed;
+  });
+
+  // Camera follows player
+  camX+=(player.x - camX)*0.08;
+  camY+=(player.y - camY)*0.08;
+
+  // Check question triggers
+  if(!questionShowing){
+    questionTriggers.forEach((qt,i)=>{
+      if(!qt.triggered && currentQIdx<QUESTIONS.length){
+        const dx=player.x-qt.x, dy=player.y-qt.y;
+        if(Math.sqrt(dx*dx+dy*dy)<qt.radius){
+          qt.triggered=true;
+          showQuestion(currentQIdx);
+        }
+      }
+    });
+  }
+
+  // Update HUD
+  const spd=Math.abs(player.speed*20)|0;
+  document.getElementById('hud-speed-val').textContent=spd+' km/h';
+  document.getElementById('speed-bar').style.width=Math.min(100,spd/1.4)+'%';
+  document.getElementById('hud-q-val').textContent=currentQIdx+'/'+QUESTIONS.length;
+  document.getElementById('hud-correct-val').textContent=correctCount;
+
+  // Position ranking
+  const pos=calcPosition();
+  const posLabels=['1º','2º','3º','4º'];
+  document.getElementById('hud-pos-val').textContent=posLabels[pos]||'4º';
+
+  // Check finish: all 10 questions answered
+  if(currentQIdx>=QUESTIONS.length && !questionShowing){
+    endGame();
+  }
+}
+
+function distToTrackCenter(x,y){
+  // Approximate distance to nearest point on the ellipse
+  let minD=99999;
+  for(let i=0;i<trackCheckpoints.length;i++){
+    const cp=trackCheckpoints[i];
+    const d=Math.hypot(x-cp.x,y-cp.y);
+    if(d<minD) minD=d;
+  }
+  return minD;
+}
+
+function calcPosition(){
+  // Simple: compare player.x + player.y progress vs bots
+  // Use closest checkpoint index as proxy
+  const pScore=getTrackProgress(player);
+  const scores=[{score:pScore,who:'player'}];
+  bots.forEach((b,i)=>scores.push({score:b.trackT%(Math.PI*2),who:i}));
+  scores.sort((a,b)=>b.score-a.score);
+  return scores.findIndex(s=>s.who==='player');
+}
+
+function getTrackProgress(p){
+  // Find angle on track
+  return Math.atan2(p.y-TRACK_CY,p.x-TRACK_CX);
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════
+function render(){
+  const W=canvas.width, H=canvas.height;
+  const offX=W/2-camX, offY=H/2-camY;
+
+  // Background
+  ctx.fillStyle='#070710';
+  ctx.fillRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,0.04)';
+  ctx.lineWidth=1;
+  const gs=60;
+  for(let x=((offX%gs)-gs);x<W+gs;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=((offY%gs)-gs);y<H+gs;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  ctx.save();
+  ctx.translate(offX, offY);
+
+  // TRACK ASPHALT
+  ctx.save();
+  ctx.strokeStyle='#1c1c2e';
+  ctx.lineWidth=TRACK_W;
+  ctx.lineCap='round';
+  ctx.lineJoin='round';
+  ctx.beginPath();
+  ctx.ellipse(TRACK_CX,TRACK_CY,TRACK_RX,TRACK_RY,0,0,Math.PI*2);
+  ctx.stroke();
+  ctx.restore();
+
+  // Track border outer
+  ctx.strokeStyle='rgba(255,208,0,0.5)';
+  ctx.lineWidth=4;
+  ctx.beginPath();
+  ctx.ellipse(TRACK_CX,TRACK_CY,TRACK_RX+TRACK_W/2+2,TRACK_RY+TRACK_W/2+2,0,0,Math.PI*2);
+  ctx.stroke();
+
+  // Track border inner
+  ctx.beginPath();
+  ctx.ellipse(TRACK_CX,TRACK_CY,TRACK_RX-TRACK_W/2-2,TRACK_RY-TRACK_W/2-2,0,0,Math.PI*2);
+  ctx.stroke();
+
+  // Track center line (dashed white)
+  ctx.strokeStyle='rgba(255,255,255,0.15)';
+  ctx.lineWidth=2;
+  ctx.setLineDash([20,20]);
+  ctx.beginPath();
+  ctx.ellipse(TRACK_CX,TRACK_CY,TRACK_RX,TRACK_RY,0,0,Math.PI*2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Grass (infield)
+  ctx.fillStyle='#0a1a0a';
+  ctx.beginPath();
+  ctx.ellipse(TRACK_CX,TRACK_CY,TRACK_RX-TRACK_W/2-6,TRACK_RY-TRACK_W/2-6,0,0,Math.PI*2);
+  ctx.fill();
+
+  // Start/finish line
+  ctx.save();
+  ctx.translate(TRACK_CX+TRACK_RX, TRACK_CY);
+  for(let i=0;i<4;i++){
+    for(let j=0;j<4;j++){
+      ctx.fillStyle=(i+j)%2?'#fff':'#000';
+      ctx.fillRect(i*8-16, j*8-16, 8, 8);
+    }
+  }
+  ctx.restore();
+
+  // Question triggers
+  questionTriggers.forEach((qt,i)=>{
+    if(qt.triggered) return;
+    const pulse=0.7+0.3*Math.sin(Date.now()*0.004+i);
+    ctx.save();
+    // Outer glow
+    const grad=ctx.createRadialGradient(qt.x,qt.y,0,qt.x,qt.y,qt.radius*1.2);
+    grad.addColorStop(0,'rgba(255,208,0,'+0.3*pulse+')');
+    grad.addColorStop(1,'rgba(255,208,0,0)');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.arc(qt.x,qt.y,qt.radius*1.2,0,Math.PI*2);
+    ctx.fill();
+    // Circle
+    ctx.strokeStyle=`rgba(255,208,0,${pulse})`;
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.arc(qt.x,qt.y,24,0,Math.PI*2);
+    ctx.stroke();
+    // Number
+    ctx.fillStyle=`rgba(255,208,0,${pulse})`;
+    ctx.font='bold 16px Orbitron,monospace';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText('Q'+(i+1), qt.x, qt.y);
+    ctx.restore();
+  });
+
+  // Bot trails + cars
+  bots.forEach(bot=>{
+    drawTrail(bot.trail, bot.color);
+    drawCar(bot.x,bot.y,bot.angle,bot.color,false,bot.name);
+  });
+
+  // Player trail
+  drawTrail(player.trail,'#ff2200');
+  // Player car
+  drawCar(player.x,player.y,player.angle,'#e8001a',true,playerData.nome?.split(' ')[0]||'PILOTO');
+
+  ctx.restore();
+
+  // Mini map
+  renderMiniMap();
+}
+
+function drawTrail(trail,color){
+  if(trail.length<2) return;
+  ctx.save();
+  ctx.strokeStyle=color;
+  ctx.globalAlpha=0.25;
+  ctx.lineWidth=4;
+  ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(trail[0].x,trail[0].y);
+  trail.forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCar(x,y,angle,color,isPlayer,label){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(angle);
+
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(4,4,18,10,0,0,Math.PI*2);
+  ctx.fill();
+
+  // Body
+  const grad=ctx.createLinearGradient(-20,0,20,0);
+  grad.addColorStop(0,darken(color,40));
+  grad.addColorStop(0.5,color);
+  grad.addColorStop(1,darken(color,20));
+  ctx.fillStyle=grad;
+  ctx.beginPath();
+  ctx.roundRect(-20,-7,40,14,4);
+  ctx.fill();
+
+  // Cockpit
+  ctx.fillStyle='#111122';
+  ctx.beginPath();
+  ctx.roundRect(-6,-5,16,10,3);
+  ctx.fill();
+
+  // Visor
+  ctx.fillStyle='rgba(100,180,255,0.7)';
+  ctx.beginPath();
+  ctx.roundRect(-2,-3,10,6,2);
+  ctx.fill();
+
+  // Front wing
+  ctx.fillStyle='#222233';
+  ctx.fillRect(16,-11,4,22);
+  ctx.fillRect(14,-13,8,4);
+  ctx.fillRect(14,9,8,4);
+
+  // Rear wing
+  ctx.fillStyle='#222233';
+  ctx.fillRect(-22,-10,4,20);
+  ctx.fillRect(-24,-12,8,4);
+  ctx.fillRect(-24,8,8,4);
+
+  // Wheels
+  [[14,-10],[14,10],[-14,-10],[-14,10]].forEach(([wx,wy])=>{
+    ctx.fillStyle='#111';
+    ctx.beginPath();
+    ctx.ellipse(wx,wy,5,5,Math.PI/2,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle='#888';
+    ctx.beginPath();
+    ctx.ellipse(wx,wy,2.5,2.5,0,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // Player highlight ring
+  if(isPlayer){
+    ctx.strokeStyle='rgba(255,208,0,0.8)';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.ellipse(0,0,26,14,0,0,Math.PI*2);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+
+  // Label above car
+  ctx.save();
+  ctx.font='bold 10px Orbitron,monospace';
+  ctx.textAlign='center';
+  ctx.fillStyle=isPlayer?'#ffd000':'rgba(255,255,255,0.7)';
+  ctx.fillText(label.substring(0,8), x, y-22);
+  ctx.restore();
+}
+
+function darken(hex,amount){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `rgb(${Math.max(0,r-amount)},${Math.max(0,g-amount)},${Math.max(0,b-amount)})`;
+}
+
+function renderMiniMap(){
+  const mc=document.getElementById('mini-canvas');
+  const mw=mc.width, mh=mc.height;
+  miniCtx.fillStyle='#050508';
+  miniCtx.fillRect(0,0,mw,mh);
+  // Track
+  miniCtx.strokeStyle='#333355';
+  miniCtx.lineWidth=6;
+  miniCtx.beginPath();
+  miniCtx.ellipse(mw/2,mh/2,mw/2-8,mh/2-8,0,0,Math.PI*2);
+  miniCtx.stroke();
+  // Q triggers
+  questionTriggers.forEach(qt=>{
+    if(qt.triggered) return;
+    const mx=mw/2+(qt.x/(TRACK_RX+TRACK_W))*(mw/2-8);
+    const my=mh/2+(qt.y/(TRACK_RY+TRACK_W))*(mh/2-8);
+    miniCtx.fillStyle='#ffd000';
+    miniCtx.beginPath();
+    miniCtx.arc(mx,my,3,0,Math.PI*2);
+    miniCtx.fill();
+  });
+  // Bots
+  bots.forEach(b=>{
+    const mx=mw/2+(b.x/(TRACK_RX+TRACK_W))*(mw/2-8);
+    const my=mh/2+(b.y/(TRACK_RY+TRACK_W))*(mh/2-8);
+    miniCtx.fillStyle=b.color;
+    miniCtx.beginPath();
+    miniCtx.arc(mx,my,3,0,Math.PI*2);
+    miniCtx.fill();
+  });
+  // Player
+  const px=mw/2+(player.x/(TRACK_RX+TRACK_W))*(mw/2-8);
+  const py=mh/2+(player.y/(TRACK_RY+TRACK_W))*(mh/2-8);
+  miniCtx.fillStyle='#e8001a';
+  miniCtx.beginPath();
+  miniCtx.arc(px,py,4,0,Math.PI*2);
+  miniCtx.fill();
+}
+
+// ═══════════════════════════════════════════════
+//  QUESTION SYSTEM
+// ═══════════════════════════════════════════════
+const Q_TIME=20000; // 20s
+
+function showQuestion(idx){
+  if(idx>=QUESTIONS.length) return;
+  questionShowing=true;
+  gamePaused=true;
+  const q=QUESTIONS[idx];
+  const overlay=document.getElementById('question-overlay');
+
+  document.getElementById('q-num-badge').textContent=q.id;
+  document.getElementById('q-title').textContent='Múltipla Escolha · QUESTÃO '+q.id;
+  document.getElementById('q-lap').textContent='Checkpoint '+(idx+1)+' de '+QUESTIONS.length;
+  document.getElementById('q-context').textContent=q.context;
+  document.getElementById('q-text').innerHTML=q.text;
+
+  const letters=['A','B','C','D'];
+  const optsEl=document.getElementById('q-options');
+  optsEl.innerHTML='';
+  q.opts.forEach((opt,i)=>{
+    const d=document.createElement('div');
+    d.className='q-opt';
+    d.innerHTML=`<div class="opt-letter">${letters[i]}</div><span>${opt}</span>`;
+    d.addEventListener('click',()=>answerQuestion(idx,i,d,optsEl));
+    optsEl.appendChild(d);
+  });
+
+  document.getElementById('q-feedback').className='q-feedback';
+  document.getElementById('q-feedback').textContent='';
+  overlay.classList.add('show');
+
+  // Timer
+  const timerEl=document.getElementById('q-timer-inner');
+  timerEl.style.transition='none';
+  timerEl.style.width='100%';
+  timerEl.style.background='#ffd000';
+  setTimeout(()=>{
+    timerEl.style.transition=`width ${Q_TIME}ms linear`;
+    timerEl.style.width='0%';
+  },50);
+  if(questionTimer) clearTimeout(questionTimer);
+  questionTimer=setTimeout(()=>{
+    // Time's up — count as wrong
+    if(questionShowing) answerQuestion(idx,-1,null,optsEl);
+  }, Q_TIME);
+}
+
+function answerQuestion(idx,chosen,el,optsEl){
+  if(questionTimer) clearTimeout(questionTimer);
+  const q=QUESTIONS[idx];
+  const correct=chosen===q.answer;
+  const timerEl=document.getElementById('q-timer-inner');
+  timerEl.style.transition='none';
+
+  // Highlight
+  const opts=optsEl.querySelectorAll('.q-opt');
+  opts.forEach((o,i)=>{
+    o.style.pointerEvents='none';
+    if(i===q.answer) o.classList.add('correct');
+    else if(i===chosen) o.classList.add('wrong');
+  });
+
+  const fb=document.getElementById('q-feedback');
+  if(correct){
+    correctCount++;
+    fb.className='q-feedback ok';
+    fb.textContent='✅ CORRETO! +1 posição mantida — acelera piloto!';
+    timerEl.style.background='#00e87a';
+    showToast('✅ RESPOSTA CERTA! TURBO ATIVADO!','gain');
+  } else {
+    fb.className='q-feedback fail';
+    if(chosen===-1){
+      fb.textContent='⏱ TEMPO ESGOTADO! Perdeu posição para um rival!';
+    } else {
+      fb.textContent='❌ RESPOSTA ERRADA! Os rivais passaram você!';
+    }
+    timerEl.style.background='#e8001a';
+    showToast('❌ ERRO! OS RIVAIS ESTÃO PASSANDO!','lose');
+    // Penalty: push bots forward
+    bots.forEach(b=>{ b.trackT+=0.18; b.penalty=0; });
+    // Slow player
+    player.speed=Math.max(player.speed-3,-1);
+  }
+
+  answers.push({qId:q.id, chosen, correct});
+  currentQIdx=idx+1;
+
+  setTimeout(()=>{
+    document.getElementById('question-overlay').classList.remove('show');
+    questionShowing=false;
+    gamePaused=false;
+    // Small boost after correct answer
+    if(correct) player.speed=Math.min(player.speed+2, 5);
+  }, 2200);
+}
+
+function showToast(msg,type){
+  const toast=document.getElementById('toast');
+  const d=document.createElement('div');
+  d.className='toast-msg '+type;
+  d.textContent=msg;
+  toast.appendChild(d);
+  setTimeout(()=>d.remove(), 2800);
+}
+
+// ═══════════════════════════════════════════════
+//  END GAME
+// ═══════════════════════════════════════════════
+function endGame(){
+  gameRunning=false;
+  cancelAnimationFrame(animId);
+  document.getElementById('screen-game').style.display='none';
+  const screen=document.getElementById('screen-finish');
+  screen.style.display='flex';
+
+  const pos=calcPosition()+1;
+  const posLabels=['🥇 1º','🥈 2º','🥉 3º','4º'];
+  document.getElementById('fin-pos').textContent=posLabels[Math.min(pos-1,3)];
+
+  const stars=['','⭐','⭐⭐','⭐⭐⭐','⭐⭐⭐⭐','⭐⭐⭐⭐⭐',
+               '⭐⭐⭐⭐⭐⭐','⭐⭐⭐⭐⭐⭐⭐','⭐⭐⭐⭐⭐⭐⭐⭐',
+               '⭐⭐⭐⭐⭐⭐⭐⭐⭐','🏆'];
+  document.getElementById('fin-stars').textContent=stars[correctCount]||'';
+  document.getElementById('fin-nota').textContent=`ACERTOS: ${correctCount}/10`;
+
+  const msgs=['Treino é a chave! Tente de novo! 🔧','Bom início de temporada! 🏎','Evoluindo! O pódio está perto! ⚡','Excelente performance! 🥈','CAMPEÃO DA GENÉTICA! Pódio garantido! 🏆'];
+  const mi=Math.floor(correctCount/2.5);
+  document.getElementById('fin-detail').textContent=
+    (msgs[Math.min(mi,4)])+'\nPiloto: '+playerData.nome+' · Nº '+playerData.numero+' · '+playerData.serie;
+}
+
+async function sendResults(){
+  const btn=document.querySelector('.btn-send');
+  btn.disabled=true;
+  const st=document.getElementById('send-status');
+  st.className='loading';
+  st.textContent='📡 TRANSMITINDO DADOS AO PIT WALL...';
+  st.style.display='block';
+
+  const payload={
+    nome:playerData.nome, numero:playerData.numero,
+    serie:playerData.serie, data:playerData.data,
+    acertos:correctCount, total:10,
+    atividade:'PIT_STOP_GENETICO_CORRIDA_9ANO'
+  };
+  answers.forEach(a=>{ payload['q'+a.qId]=(a.correct?'CORRETA':'ERRADA'); });
+
+  try{
+    await fetch(GAS_URL,{method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams(payload).toString()});
+    st.className='ok';
+    st.textContent='🏁 DADOS ENVIADOS COM SUCESSO!';
+  }catch(e){
+    st.className='fail';
+    st.textContent='❌ Erro ao enviar. Verifique a conexão.';
+    btn.disabled=false;
+  }
+}
+
+function restartGame(){
+  document.getElementById('screen-finish').style.display='none';
+  document.getElementById('screen-select').style.display='flex';
+  document.getElementById('send-status').style.display='none';
+}
+
+window.addEventListener('resize',()=>{
+  if(canvas){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+});
+</script>
+</body>
+</html>
