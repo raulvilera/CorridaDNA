@@ -3,1321 +3,421 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>PIT STOP GENÉTICO 3D – Corrida Interativa | 9º Ano</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+<title>PIT STOP GENÉTICO 3D | Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Exo+2:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
+:root { --primary: #ffd000; --danger: #e8001a; --bg: #05060f; }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Exo 2',sans-serif;touch-action:none;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:'Exo 2',sans-serif;touch-action:none;}
 
-/* ── SCREENS ── */
-#screen-select,#screen-game,#screen-finish{position:fixed;inset:0;z-index:10;}
-#screen-select{background:linear-gradient(160deg,#040610 0%,#0a0f28 50%,#050b18 100%);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;padding:0 0 30px 0;}
-#screen-game{display:none;background:#000;}
-#screen-finish{background:radial-gradient(circle at 50% 30%,#0d1535,#000);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;overflow-y:auto;}
+/* --- TELAS --- */
+#screen-select, #screen-game, #screen-finish { position:fixed; inset:0; z-index:10; }
+#screen-select { background:linear-gradient(160deg,#040610 0%,#0a0f28 100%); display:flex; flex-direction:column; align-items:center; overflow-y:auto; padding-bottom:40px; }
+#screen-game { display:none; }
+#screen-finish { background:rgba(0,0,0,0.9); backdrop-filter:blur(10px); display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:#fff; z-index:1000;}
 
-/* ── 3D CANVAS ── */
-#three-canvas{display:block;width:100%;height:100%;position:absolute;top:0;left:0;}
+/* --- UI COMPONENTS --- */
+.header { width:100%; background:rgba(0,0,0,0.8); border-bottom:3px solid var(--primary); padding:15px; text-align:center; }
+.title { font-family:'Orbitron'; color:var(--primary); font-size:1.8rem; text-shadow: 0 0 15px rgba(255,208,0,0.5); }
+.form-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,208,0,0.2); padding:25px; border-radius:20px; width:90%; max-width:500px; margin-top:20px; }
+input, select { width:100%; padding:12px; margin:10px 0; background:#111; border:1px solid #444; color:#fff; border-radius:8px; font-size:1rem; }
 
-/* ── CHECKER BAR ── */
-.checker-bar{width:100%;height:12px;display:flex;flex-shrink:0;}
-.checker-bar div{flex:1;height:100%;}
+.btn-start { background:var(--danger); color:#fff; border:none; padding:18px; width:100%; border-radius:50px; font-family:'Orbitron'; font-weight:900; cursor:pointer; box-shadow:0 5px 0 #8b0010; transition:0.1s; margin-top:15px;}
+.btn-start:active { transform:translateY(4px); box-shadow:0 1px 0 #8b0010; }
 
-/* ── SELECT ── */
-.school-header-block{width:100%;text-align:center;background:rgba(5,5,15,.97);border-bottom:2px solid #ffd000;padding:14px 16px;position:sticky;top:0;z-index:20;}
-.school-name{font-family:'Exo 2',sans-serif;font-size:clamp(.9rem,2.5vw,1.2rem);font-weight:700;color:#f0f4ff;letter-spacing:1px;}
-.school-sub{font-size:.65rem;color:#445577;text-transform:uppercase;letter-spacing:.15em;margin-top:3px;}
-.hero-title{font-family:'Orbitron',sans-serif;font-size:clamp(1.5rem,5vw,2.6rem);font-weight:900;color:#ffd000;text-shadow:0 0 50px rgba(255,208,0,.7),0 0 100px rgba(255,208,0,.3);letter-spacing:4px;text-align:center;margin-top:28px;}
-.hero-sub{font-family:'Orbitron',sans-serif;font-size:clamp(.55rem,.9vw,.7rem);color:rgba(255,255,255,.4);letter-spacing:6px;text-align:center;margin-top:6px;}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,208,0,.08);border:1px solid rgba(255,208,0,.25);border-radius:30px;padding:6px 18px;font-family:'Orbitron',sans-serif;font-size:.62rem;color:#ffd000;letter-spacing:.1em;margin-top:10px;}
-.form-card{background:rgba(10,12,30,.97);border:1px solid rgba(255,208,0,.18);border-radius:22px;padding:clamp(18px,4vw,32px);width:calc(100% - 32px);max-width:520px;display:flex;flex-direction:column;gap:14px;margin-top:18px;box-shadow:0 0 80px rgba(0,0,0,.8),0 0 40px rgba(255,208,0,.05);}
-.field-label{font-family:'Orbitron',sans-serif;font-size:.58rem;color:#ffd000;letter-spacing:.12em;margin-bottom:6px;text-transform:uppercase;}
-select,input[type=text]{width:100%;padding:11px 14px;border:1.5px solid rgba(255,208,0,.25);border-radius:10px;background:rgba(255,255,255,.03);color:#f0f4ff;font-family:'Exo 2',sans-serif;font-size:.9rem;outline:none;transition:.2s;appearance:none;-webkit-appearance:none;}
-select:focus,input[type=text]:focus{border-color:#ffd000;box-shadow:0 0 0 3px rgba(255,208,0,.12);}
-select option{background:#0d0d20;color:#fff;}
-.select-wrap{position:relative;}
-.select-wrap::after{content:'▾';position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#ffd000;pointer-events:none;font-size:.9rem;}
-.btn-start{padding:16px 40px;background:linear-gradient(135deg,#e8001a,#8b0010);color:#fff;border:none;border-radius:50px;font-family:'Orbitron',sans-serif;font-size:clamp(.75rem,.9vw,.9rem);font-weight:700;letter-spacing:.15em;cursor:pointer;box-shadow:0 6px 0 #4a0008,0 0 40px rgba(232,0,26,.35);transition:.1s;margin-top:4px;width:100%;}
-.btn-start:active{transform:translateY(4px);box-shadow:0 2px 0 #4a0008;}
-.controls-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;}
-.key-badge{background:rgba(255,208,0,.07);border:1px solid rgba(255,208,0,.3);border-radius:10px;padding:8px 10px;font-family:'Orbitron',sans-serif;font-size:.6rem;color:#ffd000;letter-spacing:.05em;text-align:center;line-height:1.4;}
-.key-badge span{display:block;font-size:.9rem;margin-bottom:3px;}
+/* --- HUD --- */
+#hud { position:fixed; top:10px; left:10px; right:10px; pointer-events:none; display:flex; justify-content:space-between; z-index:100; }
+.stats-box { background:rgba(0,0,0,0.7); border:1px solid var(--primary); padding:10px 15px; border-radius:10px; color:#fff; font-family:'Orbitron'; font-size:0.8rem; }
+.speedometer { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); padding:10px 30px; border-radius:40px; border-bottom:4px solid var(--primary); color:var(--primary); font-family:'Orbitron'; text-align:center; pointer-events:none;}
 
-/* ── HUD ── */
-#hud{position:fixed;top:0;left:0;right:0;z-index:50;pointer-events:none;}
-.hud-top{display:flex;align-items:stretch;background:rgba(0,0,0,.82);backdrop-filter:blur(12px);border-bottom:2px solid rgba(255,208,0,.25);}
-.hud-box{padding:6px 12px;border-right:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;gap:1px;justify-content:center;}
-.hud-box:last-child{border-right:none;}
-.hud-label{font-family:'Orbitron',sans-serif;font-size:clamp(.42rem,.6vw,.55rem);color:#445577;letter-spacing:.1em;text-transform:uppercase;}
-.hud-val{font-family:'Orbitron',sans-serif;font-size:clamp(.85rem,2vw,1rem);font-weight:700;color:#ffd000;line-height:1;}
-#hud-pos-val{font-size:clamp(1rem,2.5vw,1.3rem);}
-.hud-flex{flex:1;}
-#speed-bar-wrap{height:5px;background:rgba(255,255,255,.08);border-radius:4px;margin-top:4px;overflow:hidden;}
-#speed-bar{height:100%;width:0%;background:linear-gradient(90deg,#00e87a,#ffd000,#e8001a);border-radius:4px;transition:width .08s;}
-.hud-mini-map{width:110px;padding:5px 8px;display:flex;align-items:center;justify-content:center;}
-#mini-canvas{border-radius:6px;border:1px solid rgba(255,208,0,.25);}
+/* --- CONTROLES MOBILE --- */
+#controls { position:fixed; bottom:20px; width:100%; display:flex; justify-content:space-between; padding:0 30px; pointer-events:none; }
+.ctrl-group { display:flex; gap:15px; pointer-events:all; }
+.btn-ctrl { width:70px; height:70px; background:rgba(255,255,255,0.1); border:2px solid #fff; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.5rem; user-select:none; }
+.btn-ctrl.active { background:var(--primary); color:#000; transform:scale(0.9); }
+.btn-accel { background:rgba(0,255,100,0.2); border-color:#00ff64; }
+.btn-brake { background:rgba(255,0,0,0.2); border-color:#ff0000; }
 
-/* ── MOBILE CONTROLS ── */
-#mobile-controls{
-  position:fixed;bottom:0;left:0;right:0;z-index:100;
-  display:flex;justify-content:space-between;align-items:flex-end;
-  padding:12px 16px 20px;
-  pointer-events:none;
-  background:linear-gradient(to top,rgba(0,0,0,.6) 0%,transparent 100%);
-}
-.ctrl-group{display:flex;gap:10px;pointer-events:all;}
-.ctrl-group.right-group{flex-direction:column;align-items:flex-end;gap:10px;}
-.ctrl-row{display:flex;gap:10px;}
-.ctrl-btn{
-  width:clamp(52px,12vw,64px);height:clamp(52px,12vw,64px);
-  border-radius:50%;border:2px solid;
-  display:flex;align-items:center;justify-content:center;
-  font-size:clamp(1.1rem,3vw,1.5rem);cursor:pointer;
-  user-select:none;touch-action:none;
-  backdrop-filter:blur(6px);
-  transition:transform .08s,opacity .08s;
-}
-.ctrl-btn:active,.ctrl-btn.pressed{transform:scale(.88);opacity:.7;}
-.ctrl-left,.ctrl-right{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:#fff;}
-.ctrl-accel{background:rgba(0,232,122,.2);border-color:rgba(0,232,122,.5);color:#00e87a;}
-.ctrl-brake{background:rgba(232,0,26,.15);border-color:rgba(232,0,26,.4);color:#ff4455;}
-
-/* ── QUESTION OVERLAY ── */
-#question-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.88);backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;padding:12px;}
-#question-overlay.show{display:flex;}
-.q-card{background:linear-gradient(155deg,#0a0d22,#0e1430);border:2px solid #ffd000;border-radius:22px;padding:clamp(18px,4vw,28px);max-width:580px;width:100%;box-shadow:0 0 100px rgba(255,208,0,.2),0 30px 80px rgba(0,0,0,.8);animation:slideUp .3s cubic-bezier(.2,.8,.2,1);}
-@keyframes slideUp{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-.q-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
-.q-num-badge{min-width:44px;height:44px;background:linear-gradient(145deg,#e8001a,#8b0010);color:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:900;flex-shrink:0;box-shadow:0 4px 15px rgba(232,0,26,.4);}
-.q-title{font-family:'Orbitron',sans-serif;font-size:clamp(.55rem,.7vw,.65rem);color:#ffd000;letter-spacing:.1em;text-transform:uppercase;}
-.q-context{background:rgba(255,208,0,.06);border-left:3px solid rgba(255,208,0,.4);border-radius:0 10px 10px 0;padding:8px 14px;font-size:clamp(.72rem,.85vw,.82rem);color:rgba(255,255,255,.55);font-style:italic;margin-bottom:12px;line-height:1.5;}
-.q-text{font-size:clamp(.85rem,1.1vw,.95rem);color:#f0f4ff;line-height:1.65;margin-bottom:14px;}
-.q-text strong{color:#ffd000;}
-.q-options{display:flex;flex-direction:column;gap:7px;}
-.q-opt{display:flex;align-items:flex-start;gap:11px;padding:10px 14px;border:1.5px solid rgba(255,255,255,.09);border-radius:12px;cursor:pointer;transition:all .18s;font-size:clamp(.8rem,.95vw,.88rem);color:rgba(255,255,255,.82);background:rgba(255,255,255,.025);line-height:1.4;}
-.q-opt:hover{border-color:#ffd000;background:rgba(255,208,0,.07);transform:translateX(4px);}
-.q-opt.correct{border-color:#00e87a!important;background:rgba(0,232,122,.13)!important;color:#00e87a!important;}
-.q-opt.wrong{border-color:#e8001a!important;background:rgba(232,0,26,.13)!important;color:#ff6677!important;}
-.opt-letter{flex-shrink:0;width:26px;height:26px;border:1.5px solid rgba(255,255,255,.22);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:.7rem;font-weight:700;color:#7788aa;margin-top:1px;}
-.q-feedback{text-align:center;padding:10px;border-radius:10px;font-family:'Orbitron',sans-serif;font-size:clamp(.7rem,.8vw,.8rem);letter-spacing:.06em;display:none;margin-top:10px;}
-.q-feedback.ok{display:block;color:#00e87a;background:rgba(0,232,122,.09);border:1px solid rgba(0,232,122,.25);}
-.q-feedback.fail{display:block;color:#ff6677;background:rgba(232,0,26,.09);border:1px solid rgba(232,0,26,.25);}
-#q-timer-bar{height:4px;background:rgba(255,255,255,.08);border-radius:4px;margin-bottom:14px;overflow:hidden;}
-#q-timer-inner{height:100%;background:#ffd000;border-radius:4px;width:100%;transition:width linear;}
-
-/* ── TOAST ── */
-#toast{position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:300;pointer-events:none;width:max-content;max-width:90vw;}
-.toast-msg{padding:10px 22px;border-radius:40px;font-family:'Orbitron',sans-serif;font-size:clamp(.65rem,.8vw,.78rem);font-weight:700;letter-spacing:.1em;text-align:center;animation:toastIn .3s ease;margin-bottom:8px;}
-.toast-msg.gain{background:rgba(0,232,122,.93);color:#002a18;box-shadow:0 4px 24px rgba(0,232,122,.35);}
-.toast-msg.lose{background:rgba(232,0,26,.93);color:#fff;box-shadow:0 4px 24px rgba(232,0,26,.35);}
-.toast-msg.info{background:rgba(0,120,255,.88);color:#fff;}
-@keyframes toastIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-
-/* ── FINISH SCREEN ── */
-.finish-flag{font-size:clamp(3rem,8vw,5rem);animation:flagBounce 1.2s ease infinite;}
-@keyframes flagBounce{0%,100%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.12) rotate(5deg)}}
-.finish-title{font-family:'Orbitron',sans-serif;font-size:clamp(1.3rem,4vw,2.2rem);font-weight:900;color:#ffd000;text-shadow:0 0 40px rgba(255,208,0,.7);text-align:center;}
-.finish-pos{font-family:'Orbitron',sans-serif;font-size:clamp(2.5rem,7vw,4rem);font-weight:900;color:#fff;text-align:center;}
-.finish-pos span{color:#ffd000;}
-.finish-nota{font-family:'Orbitron',sans-serif;font-size:clamp(.9rem,2vw,1.2rem);color:#ffd000;letter-spacing:.1em;text-align:center;}
-.finish-detail{font-size:clamp(.78rem,.9vw,.9rem);color:#7788aa;text-align:center;max-width:420px;line-height:1.7;}
-.stars-row{font-size:clamp(1.5rem,4vw,2.5rem);letter-spacing:4px;}
-.finish-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;}
-.btn-finish{padding:12px 28px;border:none;border-radius:40px;font-family:'Orbitron',sans-serif;font-size:clamp(.68rem,.8vw,.78rem);font-weight:700;letter-spacing:.08em;cursor:pointer;transition:.1s;}
-.btn-play-again{background:linear-gradient(135deg,#e8001a,#8b0010);color:#fff;box-shadow:0 5px 0 #4a0008,0 0 30px rgba(232,0,26,.3);}
-.btn-play-again:active{transform:translateY(3px);}
-.btn-send{background:rgba(255,208,0,.1);color:#ffd000;border:1.5px solid rgba(255,208,0,.4);}
-#send-status{font-family:'Orbitron',sans-serif;font-size:.68rem;letter-spacing:.07em;padding:10px 18px;border-radius:10px;display:none;text-align:center;max-width:380px;}
-#send-status.ok{display:block;background:rgba(0,232,122,.08);color:#00e87a;border:1px solid rgba(0,232,122,.25);}
-#send-status.fail{display:block;background:rgba(232,0,26,.08);color:#ff6677;border:1px solid rgba(232,0,26,.25);}
-#send-status.loading{display:block;background:rgba(255,208,0,.06);color:#ffd000;border:1px solid rgba(255,208,0,.25);}
-
-/* ── TRACK VIEW TOGGLE ── */
-#view-toggle{
-  position:fixed;top:70px;right:12px;z-index:150;
-  background:rgba(0,0,0,.7);border:1px solid rgba(255,208,0,.35);border-radius:10px;
-  padding:7px 12px;font-family:'Orbitron',sans-serif;font-size:.58rem;color:#ffd000;
-  cursor:pointer;pointer-events:all;letter-spacing:.06em;backdrop-filter:blur(8px);
-  transition:.2s;
-}
-#view-toggle:hover{background:rgba(255,208,0,.1);}
+/* --- OVERLAY QUESTÃO --- */
+#question-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.95); display:none; align-items:center; justify-content:center; z-index:500; padding:20px; }
+.q-card { background:#111420; border:2px solid var(--primary); border-radius:20px; padding:25px; width:100%; max-width:600px; box-shadow:0 0 50px rgba(0,0,0,0.5); }
+.q-opt { background:rgba(255,255,255,0.05); border:1px solid #333; padding:15px; margin:10px 0; border-radius:10px; color:#fff; cursor:pointer; transition:0.2s; }
+.q-opt:hover { background:rgba(255,208,0,0.1); border-color:var(--primary); }
+.q-opt.correct { background:#004411; border-color:#00ff64; }
+.q-opt.wrong { background:#440000; border-color:#ff0000; }
 </style>
 </head>
 <body>
 
-<!-- ══════════ SELECT SCREEN ══════════ -->
 <div id="screen-select">
-  <div class="checker-bar" id="cb-top"></div>
-  <div class="school-header-block">
-    <div class="school-name">E.E. Profª Wanda Mascagni de Sá</div>
-    <div class="school-sub">Secretaria da Educação do Estado de São Paulo · SEDUC-SP</div>
-  </div>
-
-  <div class="hero-title">🏁 PIT STOP GENÉTICO</div>
-  <div class="hero-sub">CORRIDA DO CONHECIMENTO · 3D EDITION</div>
-  <div class="hero-badge">⚗️ 2º BIMESTRE &nbsp;·&nbsp; 9º ANO &nbsp;·&nbsp; CIÊNCIAS</div>
-
-  <div class="form-card">
-    <div>
-      <div class="field-label">🏎 Piloto</div>
-      <div class="select-wrap">
-        <select id="sel-nome" onchange="fillDriver()">
-          <option value="">— Selecione seu nome —</option>
-          <option value="0">NICOLAS PENTEADO — Nº 25 · 9º Ano B</option>
-          <option value="1">YURI GABRIEL DE MORAES PONGOLINO — Nº 41 · 9º Ano A</option>
+    <div class="header">
+        <div class="title">PIT STOP GENÉTICO 3D</div>
+        <p style="color:#888; font-size:0.7rem; letter-spacing:2px; margin-top:5px;">9º ANO | CIÊNCIAS</p>
+    </div>
+    <div class="form-card">
+        <label style="color:var(--primary); font-size:0.7rem; font-family:'Orbitron';">PILOTO</label>
+        <select id="sel-nome">
+            <option value="">-- SELECIONE SEU NOME --</option>
+            <option value="NICOLAS PENTEADO">NICOLAS PENTEADO (9º B)</option>
+            <option value="YURI GABRIEL">YURI GABRIEL (9º A)</option>
         </select>
-      </div>
+        <button class="btn-start" onclick="initGame()">LARGADA! ▶</button>
+        <div style="margin-top:20px; color:#666; font-size:0.8rem; text-align:center;">
+            Use as SETAS do teclado ou os botões na tela.
+        </div>
     </div>
-
-    <div style="display:flex;gap:10px;">
-      <div style="flex:1;">
-        <div class="field-label">Nº</div>
-        <input type="text" id="inp-num" readonly style="cursor:default;text-align:center;">
-      </div>
-      <div style="flex:2;">
-        <div class="field-label">Turma</div>
-        <input type="text" id="inp-serie" readonly>
-      </div>
-      <div style="flex:2;">
-        <div class="field-label">Data</div>
-        <input type="text" id="inp-data" placeholder="dd/mm/aaaa">
-      </div>
-    </div>
-
-    <div>
-      <div class="field-label" style="margin-bottom:8px;">CONTROLES</div>
-      <div class="controls-grid">
-        <div class="key-badge"><span>⌨️</span>← → Direção</div>
-        <div class="key-badge"><span>⌨️</span>↑ Acelerar</div>
-        <div class="key-badge"><span>⌨️</span>↓ Frear</div>
-        <div class="key-badge"><span>👆</span>Botões na tela</div>
-        <div class="key-badge"><span>🎮</span>Gamepad suporte</div>
-        <div class="key-badge"><span>👁️</span>Botão Vista</div>
-      </div>
-    </div>
-
-    <button class="btn-start" onclick="startGame()">▶ ACELERAR — INICIAR CORRIDA</button>
-  </div>
-  <div class="checker-bar" id="cb-bot" style="margin-top:20px;"></div>
 </div>
 
-<!-- ══════════ GAME SCREEN ══════════ -->
 <div id="screen-game">
-  <canvas id="three-canvas"></canvas>
-
-  <!-- HUD -->
-  <div id="hud">
-    <div class="hud-top">
-      <div class="hud-box">
-        <div class="hud-label">Pos</div>
-        <div class="hud-val" id="hud-pos-val">1º</div>
-      </div>
-      <div class="hud-box hud-flex">
-        <div class="hud-label">Velocidade</div>
-        <div class="hud-val" id="hud-speed-val">0 km/h</div>
-        <div id="speed-bar-wrap"><div id="speed-bar"></div></div>
-      </div>
-      <div class="hud-box">
-        <div class="hud-label">Questões</div>
-        <div class="hud-val" id="hud-q-val">0/10</div>
-      </div>
-      <div class="hud-box">
-        <div class="hud-label">Certas</div>
-        <div class="hud-val" style="color:#00e87a;" id="hud-correct-val">0</div>
-      </div>
-      <div class="hud-mini-map">
-        <canvas id="mini-canvas" width="100" height="60"></canvas>
-      </div>
+    <canvas id="game-canvas"></canvas>
+    <div id="hud">
+        <div class="stats-box" id="hud-stats">QUESTÃO: 1/10</div>
+        <div class="stats-box" id="hud-score" style="color:var(--primary)">ACERTOS: 0</div>
     </div>
-  </div>
-
-  <!-- View toggle button -->
-  <button id="view-toggle" onclick="toggleCameraView()">👁️ VISTA GERAL</button>
-
-  <!-- Mobile controls -->
-  <div id="mobile-controls">
-    <div class="ctrl-group">
-      <button id="btn-left" class="ctrl-btn ctrl-left" ontouchstart="mobilePress('ArrowLeft',true)" ontouchend="mobilePress('ArrowLeft',false)" onmousedown="mobilePress('ArrowLeft',true)" onmouseup="mobilePress('ArrowLeft',false)">◀</button>
-      <button id="btn-right" class="ctrl-btn ctrl-right" ontouchstart="mobilePress('ArrowRight',true)" ontouchend="mobilePress('ArrowRight',false)" onmousedown="mobilePress('ArrowRight',true)" onmouseup="mobilePress('ArrowRight',false)">▶</button>
+    <div class="speedometer">
+        <div id="spd-val">0</div>
+        <div style="font-size:0.5rem">KM/H</div>
     </div>
-    <div class="ctrl-group right-group">
-      <button id="btn-accel" class="ctrl-btn ctrl-accel" ontouchstart="mobilePress('ArrowUp',true)" ontouchend="mobilePress('ArrowUp',false)" onmousedown="mobilePress('ArrowUp',true)" onmouseup="mobilePress('ArrowUp',false)">▲</button>
-      <button id="btn-brake" class="ctrl-btn ctrl-brake" ontouchstart="mobilePress('ArrowDown',true)" ontouchend="mobilePress('ArrowDown',false)" onmousedown="mobilePress('ArrowDown',true)" onmouseup="mobilePress('ArrowDown',false)">▼</button>
+    <div id="controls">
+        <div class="ctrl-group">
+            <div class="btn-ctrl" id="btn-left">◀</div>
+            <div class="btn-ctrl" id="btn-right">▶</div>
+        </div>
+        <div class="ctrl-group">
+            <div class="btn-ctrl btn-brake" id="btn-down">▼</div>
+            <div class="btn-ctrl btn-accel" id="btn-up">▲</div>
+        </div>
     </div>
-  </div>
 </div>
 
-<!-- ══════════ QUESTION OVERLAY ══════════ -->
 <div id="question-overlay">
-  <div class="q-card">
-    <div id="q-timer-bar"><div id="q-timer-inner"></div></div>
-    <div class="q-header">
-      <div class="q-num-badge" id="q-num-badge">1</div>
-      <div>
-        <div class="q-title" id="q-title">Múltipla Escolha</div>
-        <div style="font-size:.72rem;color:#445577;margin-top:2px;" id="q-lap">Checkpoint 1</div>
-      </div>
+    <div class="q-card">
+        <h2 id="q-text" style="color:#fff; margin-bottom:20px; font-size:1.1rem;"></h2>
+        <div id="q-options"></div>
     </div>
-    <div class="q-context" id="q-context"></div>
-    <div class="q-text" id="q-text"></div>
-    <div class="q-options" id="q-options"></div>
-    <div class="q-feedback" id="q-feedback"></div>
-  </div>
 </div>
 
-<!-- TOAST -->
-<div id="toast"></div>
-
-<!-- ══════════ FINISH SCREEN ══════════ -->
 <div id="screen-finish">
-  <div class="finish-flag">🏁</div>
-  <div class="finish-title">CORRIDA ENCERRADA!</div>
-  <div class="finish-pos">POSIÇÃO <span id="fin-pos">1º</span></div>
-  <div class="stars-row" id="fin-stars">⭐⭐⭐</div>
-  <div class="finish-nota" id="fin-nota">ACERTOS: 0/10</div>
-  <div class="finish-detail" id="fin-detail"></div>
-  <div class="finish-btns">
-    <button class="btn-finish btn-play-again" onclick="restartGame()">🔄 NOVA CORRIDA</button>
-    <button class="btn-finish btn-send" onclick="sendResults()">📤 ENVIAR RESULTADOS</button>
-  </div>
-  <div id="send-status"></div>
+    <h1 style="color:var(--primary); font-family:'Orbitron'; font-size:3rem;">FIM DE PROVA!</h1>
+    <div id="fin-result" style="font-size:1.5rem; margin:20px 0;"></div>
+    <button class="btn-start" style="width:auto; padding:15px 40px;" onclick="location.reload()">RECORRER</button>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-//  DATA
-// ═══════════════════════════════════════════════════════════════
-const ALUNOS=[
-  {nome:"NICOLAS PENTEADO",numero:25,serie:"9º Ano B"},
-  {nome:"YURI GABRIEL DE MORAES PONGOLINO",numero:41,serie:"9º Ano A"}
-];
-const GAS_URL="https://script.google.com/macros/s/AKfycbyERmYA0s2pKTrz47WrXoP52JVcfZL0pnJwyTwBdC_rpfzi5e3xx24pXfZTSUnAEuZB/exec";
-
-// Banco de variações de questões. Cada posição tem 3 variações diferentes
-// mas o gabarito (answer) é sempre a mesma posição na lista de opções.
-const QUESTION_BANK=[
-  // Q1 – Hereditariedade / gametas (answer sempre índice 1)
-  [
-    {context:"🏎 O carro-filho recebe peças dos dois pit crews (pais) pelos gametas.",
-     text:"<strong>DNA e Hereditariedade:</strong> Como o filho herda o material genético?",
-     opts:["Herda 100% do DNA da mãe, pois o óvulo é maior.",
-           "Cada progenitor contribui com 50% do DNA — dois mecânicos montando metade do carro.",
-           "O DNA é transmitido apenas por cromossomos autossomos, nunca sexuais.",
-           "Os gametas são diploides, gerando tetraploide no filho."]},
-    {context:"🔬 Na fecundação, dois meios formam um carro inteiro: gameta + gameta = zigoto.",
-     text:"<strong>Herança Genética:</strong> De onde vem o DNA de um ser humano?",
-     opts:["Exclusivamente do pai, pois o espermatozoide possui núcleo maior.",
-           "Metade vem do pai (via espermatozoide) e metade da mãe (via óvulo).",
-           "Apenas dos genes dominantes de ambos os pais.",
-           "Gerado aleatoriamente de novo em cada geração."]},
-    {context:"🧬 Fecundação = pit stop duplo: cada progenitor entrega exatamente metade das peças.",
-     text:"<strong>Transmissão de DNA:</strong> Qual afirmação está correta sobre a herança genética?",
-     opts:["O zigoto tem 3x mais DNA que as células somáticas dos pais.",
-           "O zigoto é formado pela união de dois gametas haploides, recebendo 50% de cada genitor.",
-           "Os gametas carregam o DNA completo (2n) para garantir a herança.",
-           "Apenas os genes mitocondriais são transmitidos pelo pai."]}
-  ],
-  // Q2 – Nucleotídeo (answer sempre índice 1)
-  [
-    {context:"⚙️ Nucleotídeo = 3 peças essenciais, como o trio motor/câmbio/diferencial de um F1.",
-     text:"<strong>Nucleotídeo:</strong> Quais são as três partes de um nucleotídeo?",
-     opts:["Glicose, lipídeo e proteína",
-           "Fosfato, açúcar (desoxirribose) e base nitrogenada",
-           "Aminoácido, ribose e enzima",
-           "Adenina, Timina e RNA polimerase"]},
-    {context:"🔩 Cada 'parafuso' da dupla hélice é um nucleotídeo com três componentes indissociáveis.",
-     text:"<strong>Estrutura do Nucleotídeo:</strong> O que compõe a unidade básica do DNA?",
-     opts:["Ribose, proteína e lipídeo",
-           "Grupo fosfato, pentose (desoxirribose) e base nitrogenada",
-           "Glicose, ácido graxo e nuclease",
-           "Citosina, guanina e enzima de restrição"]},
-    {context:"🏗️ A 'peça mínima' do DNA possui três componentes — sem um deles o motor falha.",
-     text:"<strong>Monômero do DNA:</strong> Qual é a composição de um nucleotídeo de DNA?",
-     opts:["Uracila, ribose e fosfato (isso é RNA!)",
-           "Base nitrogenada + desoxirribose + fosfato",
-           "Aminoácido + ribose + vitamina",
-           "Glicogênio + adenina + enzima polimerase"]}
-  ],
-  // Q3 – Bases complementares (answer sempre índice 2)
-  [
-    {context:"🔄 Bases do DNA são peças de encaixe: A·T e C·G — sem par certo, o motor falha!",
-     text:"<strong>Bases Nitrogenadas:</strong> A fita 5'-A-T-C-G-A-3' tem qual fita complementar?",
-     opts:["A-T-C-G-A (idêntica)",
-           "U-A-G-C-U (usa Uracila — isso é RNA!)",
-           "T-A-G-C-T (A emparelha T; C emparelha G)",
-           "G-C-A-T-G (invertida sem critério)"]},
-    {context:"🧲 As bases nitrogenadas se atraem como ímãs específicos: A-T e C-G são pares obrigatórios.",
-     text:"<strong>Complementaridade de Bases:</strong> Se uma fita de DNA é 3'-G-G-A-T-C-5', qual é a fita complementar?",
-     opts:["G-G-A-T-C (cópia exata)",
-           "C-C-U-A-G (contém Uracila — não é DNA!)",
-           "C-C-T-A-G (G→C e A→T, seguindo as regras)",
-           "A-A-T-C-G (inversão sem critério)"]},
-    {context:"⚙️ Cada base 'reconhece' apenas seu par: A emparelha com T; C emparelha com G.",
-     text:"<strong>Regra de Chargaff:</strong> Numa amostra de DNA, se há 30% de Adenina, qual a porcentagem de Timina?",
-     opts:["20% (complementa apenas metade)",
-           "40% (dobro da adenina)",
-           "30% (A=T pela complementaridade de bases)",
-           "60% (preenche o restante)"]}
-  ],
-  // Q4 – Rosalind Franklin (answer sempre índice 1)
-  [
-    {context:"👩‍🔬 Rosalind Franklin = mecânica invisível que nunca apareceu nas fotos do pódio.",
-     text:"<strong>Rosalind Franklin:</strong> Qual foi sua principal contribuição à descoberta do DNA?",
-     opts:["Criou o modelo da dupla hélice com Watson e Crick, dividindo o Nobel.",
-           "Produziu a Foto 51 por difração de raios-X, revelando a estrutura helicoidal.",
-           "Descobriu as bases nitrogenadas A, T, C e G pela primeira vez.",
-           "Sintetizou o DNA artificialmente em laboratório."]},
-    {context:"🏆 A história da ciência tem heróis nos bastidores — Rosalind Franklin é um deles.",
-     text:"<strong>História da Biologia Molecular:</strong> Como a Foto 51 ajudou na descoberta da estrutura do DNA?",
-     opts:["Mostrou a sequência exata de bases do genoma humano.",
-           "Revelou o padrão de difração que indica a forma helicoidal do DNA, obtida por Franklin.",
-           "Provou que o DNA é linear, não helicoidal.",
-           "Demonstrou que o RNA é mais estável que o DNA."]},
-    {context:"🔬 Técnica de raios-X aplicada ao DNA: a cristalografia revelou a estrutura antes invisível.",
-     text:"<strong>Difração de Raios-X:</strong> Quem obteve a imagem que foi fundamental para Watson e Crick proporem o modelo da dupla hélice?",
-     opts:["Gregor Mendel, com experimentos em ervilhas.",
-           "Rosalind Franklin, com a cristalografia de raios-X do DNA.",
-           "James Watson, ao fotografar amostras de sangue.",
-           "Francis Crick, ao usar microscópio eletrônico."]}
-  ],
-  // Q5 – Cromatina / histonas (answer sempre índice 0)
-  [
-    {context:"🔧 Histonas = carretéis que enrolam o 'cabo' de DNA para caber no núcleo celular.",
-     text:"<strong>Cromatina:</strong> Como o DNA se organiza para caber no núcleo celular?",
-     opts:["Enrola-se em proteínas histonas formando nucleossomos, compactados em cromatina.",
-           "A heterocromatina é a forma menos compactada — cabo solto no pit lane.",
-           "Os nucleossomos são formados apenas por DNA, sem proteínas.",
-           "A compactação impede completamente o funcionamento dos genes."]},
-    {context:"🗜️ O DNA humano tem ~2 metros — só cabe no núcleo porque é sistematicamente enrolado.",
-     text:"<strong>Nucleossomo:</strong> O que é um nucleossomo?",
-     opts:["Unidade de empacotamento do DNA: fio de DNA envolto em octâmero de histonas.",
-           "Organela citoplasmática responsável pela síntese de proteínas.",
-           "Tipo especial de RNA envolvido na regulação gênica.",
-           "Enzima que replica o DNA durante a divisão celular."]},
-    {context:"📦 DNA compactado: sem organização em cromatina, o material genético não caberia no núcleo.",
-     text:"<strong>Compactação do DNA:</strong> Qual a sequência correta de compactação do DNA no núcleo?",
-     opts:["DNA → histonas → nucleossomo → cromatina → cromossomo",
-           "Cromossomo → cromatina → histonas → DNA → nucleotídeo",
-           "RNA → ribossomo → cromatina → cromossomo → núcleo",
-           "Gene → alelo → nucleossomo → nucléolo → cromossomo"]}
-  ],
-  // Q6 – Haploide/Diploide (answer sempre índice 2)
-  [
-    {context:"🚦 Diploide (2n=46) = carro completo. Haploide (n=23) = metade do carro. Na fecundação: dois meios = um inteiro!",
-     text:"<strong>Haploides e Diploides:</strong> Qual célula humana é haploide?",
-     opts:["Neurônio (célula nervosa)",
-           "Hepatócito (célula do fígado)",
-           "Gameta (óvulo ou espermatozoide)",
-           "Eritrócito maduro (glóbulo vermelho)"]},
-    {context:"🔢 Plodia celular: células somáticas têm 2 cópias de cada cromossomo; gametas têm 1.",
-     text:"<strong>Número de Cromossomos:</strong> Por que os gametas precisam ser haploides?",
-     opts:["Para serem menores e se moverem com mais velocidade.",
-           "Porque células haploides são mais resistentes a mutações.",
-           "Para que após a fecundação o zigoto tenha o número diploide correto (2n).",
-           "Porque cromossomos extras causariam divisão celular mais rápida."]},
-    {context:"⚖️ Meiose produz n=23; fecundação restaura 2n=46 — equilíbrio cromossômico perfeito.",
-     text:"<strong>Meiose e Haploide:</strong> Qual processo gera células haploides a partir de células diploides?",
-     opts:["Mitose (divisão celular comum)",
-           "Apoptose (morte celular programada)",
-           "Meiose (divisão celular responsável pela formação de gametas)",
-           "Citocinese (divisão do citoplasma)"]}
-  ],
-  // Q7 – Cariótipo humano (answer sempre índice 2)
-  [
-    {context:"📊 O cariótipo é o painel de controle: mostra todos os sistemas (cromossomos) organizados em pares.",
-     text:"<strong>Cariótipo Humano:</strong> Quantos cromossomos tem uma célula somática humana normal?",
-     opts:["23 cromossomos (haploides)",
-           "92 cromossomos (tetraploides)",
-           "46 cromossomos: 22 pares autossomos + 1 par sexual (XX ou XY)",
-           "48 cromossomos, como outros primatas"]},
-    {context:"🔭 Análise do cariótipo permite identificar doenças cromossômicas como a Síndrome de Down.",
-     text:"<strong>Cromossomos Sexuais:</strong> Como se diferenciam homens e mulheres geneticamente pelo cariótipo?",
-     opts:["Homens têm 44 cromossomos; mulheres têm 46.",
-           "Mulheres têm par XX; homens têm par YY.",
-           "Mulheres têm par XX; homens têm par XY — ambos com 46 cromossomos no total.",
-           "Homens têm 47 cromossomos e mulheres têm 45."]},
-    {context:"🏁 Cariótipo: 'fotografia' dos cromossomos ordenados em pares — o RG genético da célula.",
-     text:"<strong>Pares Cromossômicos:</strong> Como os 46 cromossomos humanos são organizados no cariótipo?",
-     opts:["46 cromossomos individuais, sem formação de pares.",
-           "23 pares, todos autossomos (sem cromossomos sexuais).",
-           "22 pares autossomos + 1 par sexual (total = 23 pares / 46 cromossomos)",
-           "24 pares: 22 autossomos + 2 pares sexuais."]}
-  ],
-  // Q8 – Diferenciação celular / eucromatina (answer sempre índice 1)
-  [
-    {context:"🛞 Eucromatina = TURBO ligado (genes ativos). Heterocromatina = modo ECO (genes silenciados).",
-     text:"<strong>Diferenciação Celular:</strong> Por que células com o mesmo DNA têm funções diferentes?",
-     opts:["Porque cada célula perde parte do DNA ao se dividir.",
-           "Porque diferentes genes são ativados (eucromatina) ou silenciados (heterocromatina) em cada tipo celular.",
-           "Porque o DNA muda de sequência após a divisão celular.",
-           "Porque apenas células-tronco possuem DNA completo."]},
-    {context:"🧠 Neurônio e músculo têm o mesmo DNA — mas genes diferentes estão 'ligados' em cada um.",
-     text:"<strong>Expressão Gênica:</strong> O que é epigenética?",
-     opts:["Mutação permanente no DNA causada por agentes externos.",
-           "Regulação da atividade dos genes sem alterar a sequência do DNA, via eucromatina/heterocromatina.",
-           "Processo de duplicação do DNA antes da mitose.",
-           "Síntese de proteínas no ribossomo a partir do RNA mensageiro."]},
-    {context:"⚙️ Mesma 'fábrica' (DNA), diferentes 'produtos' (proteínas) — o segredo é a regulação gênica.",
-     text:"<strong>Cromatina e Função:</strong> Qual é a diferença funcional entre eucromatina e heterocromatina?",
-     opts:["Eucromatina é DNA mitocondrial; heterocromatina é DNA nuclear.",
-           "Eucromatina corresponde a regiões ativas (genes expressos); heterocromatina a regiões condensadas e inativas.",
-           "Eucromatina é encontrada apenas em células-tronco embrionárias.",
-           "Heterocromatina contém genes para divisão celular; eucromatina, genes metabólicos."]}
-  ],
-  // Q9 – Cromátides-irmãs (answer sempre índice 1)
-  [
-    {context:"🏗️ Cromossomo = chassis: duas cromátides-irmãs unidas pelo centrômero (pino central).",
-     text:"<strong>Estrutura dos Cromossomos:</strong> O que são cromátides-irmãs?",
-     opts:["Cromossomos completamente diferentes, de origens distintas.",
-           "As duas cópias idênticas de um cromossomo replicado, unidas pelo centrômero.",
-           "Os dois cromossomos homólogos de um par durante a meiose.",
-           "Fragmentos de DNA quebrados durante a mitose."]},
-    {context:"🔗 Após replicação do DNA, o cromossomo tem duas cópias idênticas — como um carro duplicado.",
-     text:"<strong>Replicação e Cromossomos:</strong> Após a replicação do DNA, como fica a estrutura do cromossomo?",
-     opts:["Transforma-se em dois cromossomos independentes imediatamente.",
-           "Forma duas cromátides-irmãs idênticas unidas no centrômero.",
-           "O cromossomo se divide ao meio longitudinalmente sem replicação.",
-           "A replicação cria cromossomos com bases modificadas."]},
-    {context:"✂️ Na mitose, as cromátides-irmãs se separam para garantir que cada célula filha receba cópia completa.",
-     text:"<strong>Centrômero:</strong> Qual a função do centrômero no cromossomo?",
-     opts:["Codificar proteínas estruturais do citoesqueleto.",
-           "Ser o ponto de junção das duas cromátides-irmãs e de ligação ao fuso mitótico.",
-           "Armazenar RNA ribossômico para síntese proteica.",
-           "Iniciar a transcrição do DNA em RNA mensageiro."]}
-  ],
-  // Q10 – Hierarquia de organização do DNA (answer sempre índice 2)
-  [
-    {context:"🏆 Do parafuso ao carro inteiro: Nucleotídeo → DNA → Nucleossomo → Cromatina → Cromossomo.",
-     text:"<strong>Hierarquia do DNA:</strong> Qual a ordem correta de organização do material genético?",
-     opts:["Cromossomo → Cromatina → Nucleossomo → DNA → Nucleotídeo",
-           "Nucleotídeo → RNA → Proteína → Cromossomo → Núcleo",
-           "Nucleotídeo → DNA → Nucleossomo → Cromatina → Cromossomo",
-           "Gene → Alelo → Locus → Genoma → Cariótipo"]},
-    {context:"🔭 Zooming out: do menor (nucleotídeo) ao maior (cromossomo) — cada nível de compactação tem nome.",
-     text:"<strong>Níveis de Compactação:</strong> Qual nível vem logo após o nucleossomo na compactação do DNA?",
-     opts:["Nucleotídeo (menor — seria voltar atrás)",
-           "Cromossomo (maior — pula etapas)",
-           "Cromatina (o conjunto de nucleossomos já parcialmente condensados)",
-           "Ribossomo (não faz parte da compactação do DNA)"]},
-    {context:"📐 Organização hierárquica: cada peça se encaixa na seguinte, do menor ao maior.",
-     text:"<strong>Genoma vs Cromossomo:</strong> Qual a relação correta entre DNA, gene e cromossomo?",
-     opts:["Gene é maior que cromossomo, que é maior que DNA.",
-           "Cromossomo é a unidade mínima; genes são maiores e DNA é o maior nível.",
-           "O DNA é formado por genes; cromossomos contêm moléculas de DNA empacotadas em cromatina.",
-           "Genes e DNA são a mesma estrutura; cromossomo é o conjunto de proteínas histonas."]}
-  ]
+/** ═══════════════════════════════════════════════════════════════
+ *  DATA & CONFIG
+ *  ═══════════════════════════════════════════════════════════════ */
+const QUESTIONS = [
+    {q:"O que compõe a estrutura básica de um nucleotídeo?", a:["Fosfato, Açúcar e Base Nitrogenada", "Proteína e Carboidrato", "Apenas DNA"], c:0},
+    {q:"Quem obteve a 'Foto 51' essencial para descobrir o DNA?", a:["James Watson", "Rosalind Franklin", "Gregor Mendel"], c:1},
+    {q:"Qual base nitrogenada é exclusiva do RNA?", a:["Timina", "Uracila", "Guanina"], c:1},
+    {q:"Células humanas somáticas possuem quantos cromossomos?", a:["23", "46", "92"], c:1},
+    {q:"O que é um gene?", a:["Uma célula completa", "Segmento de DNA com instrução proteica", "Uma proteína do sangue"], c:1},
+    {q:"Qual a forma da molécula de DNA?", a:["Círculo perfeito", "Dupla Hélice", "Linha reta"], c:1},
+    {q:"Onde fica a maior parte do DNA na célula eucarionte?", a:["Citoplasma", "Ribossomo", "Núcleo"], c:2},
+    {q:"O par de bases do DNA é sempre:", a:["A-U e C-G", "A-T e C-G", "A-C e T-G"], c:1},
+    {q:"O que são cromátides-irmãs?", a:["Cópias idênticas do cromossomo", "Cromossomos de pais diferentes", "Mutação genética"], c:0},
+    {q:"O que define o fenótipo?", a:["Apenas o DNA", "Genótipo + Meio Ambiente", "Apenas a alimentação"], c:1}
 ];
 
-// ═══════════════════════════════════════════════════════════════
-//  QUESTÃO ALEATÓRIA (sem mudar gabarito)
-// ═══════════════════════════════════════════════════════════════
-function buildQuestions(){
-  return QUESTION_BANK.map((variants,i)=>{
-    const v=variants[Math.floor(Math.random()*variants.length)];
-    // answer index is always constant per question slot (index 1, 1, 2, 1, 0, 2, 2, 1, 1, 2)
-    const answerMap=[1,1,2,1,0,2,2,1,1,2];
-    return {id:i+1, context:v.context, text:v.text, opts:v.opts, answer:answerMap[i]};
-  });
+/** ═══════════════════════════════════════════════════════════════
+ *  VARIÁVEIS DE JOGO
+ *  ═══════════════════════════════════════════════════════════════ */
+let scene, camera, renderer, car, track, particles = [];
+let keys = { up: false, down: false, left: false, right: false };
+let physics = { speed: 0, angle: 0, x: 180, z: 0, accel: 0.008, friction: 0.96, maxSpeed: 2.2, turnSpeed: 0.04 };
+let gameState = { currentQ: 0, score: 0, active: false, paused: false };
+
+// Dimensões da pista (elipse)
+const TRACK_RX = 220;
+const TRACK_RZ = 140;
+const TRACK_WIDTH = 45;
+
+/** ═══════════════════════════════════════════════════════════════
+ *  INICIALIZAÇÃO
+ *  ═══════════════════════════════════════════════════════════════ */
+function initGame() {
+    const nome = document.getElementById('sel-nome').value;
+    if(!nome) return alert("Selecione um piloto!");
+
+    document.getElementById('screen-select').style.display = 'none';
+    document.getElementById('screen-game').style.display = 'block';
+
+    setupThree();
+    setupControls();
+    gameState.active = true;
+    animate();
 }
 
-let QUESTIONS=[];
+function setupThree() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x05070a);
+    scene.fog = new THREE.Fog(0x05070a, 50, 400);
 
-// ═══════════════════════════════════════════════════════════════
-//  SELECT SCREEN SETUP
-// ═══════════════════════════════════════════════════════════════
-function makeChecker(id){
-  const el=document.getElementById(id);
-  let h='';for(let i=0;i<80;i++) h+=`<div style="background:${i%2?'#000':'#fff'}"></div>`;
-  el.innerHTML=h;
-}
-makeChecker('cb-top'); makeChecker('cb-bot');
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game-canvas'), antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
 
-function fillDriver(){
-  const v=document.getElementById('sel-nome').value;
-  if(v===''){document.getElementById('inp-num').value='';document.getElementById('inp-serie').value='';}
-  else{const a=ALUNOS[+v];document.getElementById('inp-num').value=a.numero;document.getElementById('inp-serie').value=a.serie;}
+    // Luzes
+    const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambient);
+    const sun = new THREE.DirectionalLight(0xffffff, 1);
+    sun.position.set(100, 200, 100);
+    sun.castShadow = true;
+    scene.add(sun);
+
+    // Chão e Pista
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshPhongMaterial({color: 0x0a0a0a}));
+    ground.rotation.x = -Math.PI/2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    createTrack();
+    createCar();
 }
-window.addEventListener('load',()=>{
-  const h=new Date();
-  document.getElementById('inp-data').value=String(h.getDate()).padStart(2,'0')+'/'+String(h.getMonth()+1).padStart(2,'0')+'/'+h.getFullYear();
+
+function createTrack() {
+    // Pista visual
+    const points = [];
+    for(let i=0; i<=64; i++) {
+        let a = (i/64) * Math.PI * 2;
+        points.push(new THREE.Vector3(Math.cos(a)*TRACK_RX, 0.1, Math.sin(a)*TRACK_RZ));
+    }
+    const trackShape = new THREE.Mesh(
+        new THREE.RingGeometry(TRACK_RX - TRACK_WIDTH, TRACK_RX + TRACK_WIDTH, 64),
+        new THREE.MeshStandardMaterial({ color: 0x151515, side: THREE.DoubleSide })
+    );
+    // Ajuste para elipse
+    trackShape.scale.set(1, TRACK_RZ/TRACK_RX, 1);
+    trackShape.rotation.x = -Math.PI/2;
+    scene.add(trackShape);
+
+    // Linha central
+    const lineGeo = new THREE.RingGeometry(TRACK_RX - 2, TRACK_RX + 2, 64);
+    const lineMat = new THREE.MeshBasicMaterial({ color: 0xffd000, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+    const line = new THREE.Mesh(lineGeo, lineMat);
+    line.scale.set(1, TRACK_RZ/TRACK_RX, 1);
+    line.rotation.x = -Math.PI/2;
+    line.position.y = 0.15;
+    scene.add(line);
+
+    // Marcadores de Questão (Checkpoints)
+    for(let i=0; i<10; i++) {
+        let a = (i/10) * Math.PI * 2;
+        const gate = new THREE.Mesh(
+            new THREE.BoxGeometry(10, 20, 2),
+            new THREE.MeshStandardMaterial({ color: 0xe8001a, emissive: 0xe8001a, emissiveIntensity: 0.5 })
+        );
+        gate.position.set(Math.cos(a)*TRACK_RX, 10, Math.sin(a)*TRACK_RZ);
+        gate.lookAt(0, 10, 0);
+        scene.add(gate);
+    }
+}
+
+function createCar() {
+    const group = new THREE.Group();
+    // Corpo
+    const body = new THREE.Mesh(new THREE.BoxGeometry(6, 2, 12), new THREE.MeshStandardMaterial({color: 0xe8001a}));
+    body.position.y = 1.5;
+    body.castShadow = true;
+    group.add(body);
+    // Spoiler
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(7, 0.5, 3), new THREE.MeshStandardMaterial({color: 0x111111}));
+    wing.position.set(0, 3, -5);
+    group.add(wing);
+    
+    car = group;
+    car.position.set(physics.x, 0, physics.z);
+    scene.add(car);
+}
+
+/** ═══════════════════════════════════════════════════════════════
+ *  LÓGICA DE MOVIMENTO (FÍSICA)
+ *  ═══════════════════════════════════════════════════════════════ */
+function updatePhysics() {
+    if(gameState.paused) return;
+
+    // Aceleração / Ré
+    if(keys.up) physics.speed += physics.accel;
+    else if(keys.down) physics.speed -= physics.accel * 1.5;
+    else physics.speed *= physics.friction;
+
+    physics.speed = Math.max(-physics.maxSpeed/2, Math.min(physics.speed, physics.maxSpeed));
+
+    // Direção (Só vira se estiver movendo)
+    if(Math.abs(physics.speed) > 0.1) {
+        const factor = keys.down ? -1 : 1;
+        if(keys.left) physics.angle += physics.turnSpeed * (physics.speed / physics.maxSpeed);
+        if(keys.right) physics.angle -= physics.turnSpeed * (physics.speed / physics.maxSpeed);
+    }
+
+    // Aplicar Movimento
+    physics.x += Math.sin(physics.angle) * physics.speed;
+    physics.z += Math.cos(physics.angle) * physics.speed;
+
+    // Colisão Simples com Bordas da Pista (Elipse)
+    const dist = Math.sqrt(Math.pow(physics.x/TRACK_RX, 2) + Math.pow(physics.z/TRACK_RZ, 2));
+    if(dist < 0.75 || dist > 1.25) {
+        physics.speed *= 0.9; // Atrito da grama
+        if(Math.abs(physics.speed) > 0.5) {
+             // Trepidação na grama
+             car.position.y = Math.random() * 0.5;
+        }
+    } else {
+        car.position.y = THREE.MathUtils.lerp(car.position.y, 0, 0.1);
+    }
+
+    // Atualizar Objeto 3D
+    car.position.x = physics.x;
+    car.position.z = physics.z;
+    car.rotation.y = physics.angle;
+
+    // Inclinação visual ao girar
+    car.rotation.z = THREE.MathUtils.lerp(car.rotation.z, (keys.left ? 0.1 : keys.right ? -0.1 : 0), 0.1);
+
+    // Câmera Follow (Suave)
+    const camOffset = new THREE.Vector3(
+        physics.x - Math.sin(physics.angle) * 35,
+        18,
+        physics.z - Math.cos(physics.angle) * 35
+    );
+    camera.position.lerp(camOffset, 0.1);
+    camera.lookAt(physics.x, 5, physics.z);
+
+    // Velocímetro HUD
+    document.getElementById('spd-val').textContent = Math.round(Math.abs(physics.speed) * 80);
+
+    checkCheckpoints();
+}
+
+/** ═══════════════════════════════════════════════════════════════
+ *  SISTEMA DE QUESTÕES
+ *  ═══════════════════════════════════════════════════════════════ */
+function checkCheckpoints() {
+    const anglePos = Math.atan2(physics.z, physics.x);
+    const targetAngle = ((gameState.currentQ / 10) * Math.PI * 2);
+    
+    // Simplificado: gatilho por distância do centro do portão
+    const gateX = Math.cos(targetAngle) * TRACK_RX;
+    const gateZ = Math.sin(targetAngle) * TRACK_RZ;
+    const d = Math.sqrt(Math.pow(physics.x - gateX, 2) + Math.pow(physics.z - gateZ, 2));
+
+    if(d < 25 && !gameState.paused) {
+        showQuestion();
+    }
+}
+
+function showQuestion() {
+    gameState.paused = true;
+    const q = QUESTIONS[gameState.currentQ];
+    const overlay = document.getElementById('question-overlay');
+    const options = document.getElementById('q-options');
+    
+    document.getElementById('q-text').textContent = q.q;
+    options.innerHTML = '';
+    
+    q.a.forEach((opt, i) => {
+        const btn = document.createElement('div');
+        btn.className = 'q-opt';
+        btn.textContent = opt;
+        btn.onclick = () => selectOption(i, q.c, btn);
+        options.appendChild(btn);
+    });
+    
+    overlay.style.display = 'flex';
+}
+
+function selectOption(idx, correct, element) {
+    const all = document.querySelectorAll('.q-opt');
+    all.forEach(b => b.style.pointerEvents = 'none');
+
+    if(idx === correct) {
+        element.classList.add('correct');
+        gameState.score++;
+        document.getElementById('hud-score').textContent = "ACERTOS: " + gameState.score;
+    } else {
+        element.classList.add('wrong');
+        all[correct].classList.add('correct');
+    }
+
+    setTimeout(() => {
+        document.getElementById('question-overlay').style.display = 'none';
+        gameState.currentQ++;
+        if(gameState.currentQ >= 10) {
+            endGame();
+        } else {
+            document.getElementById('hud-stats').textContent = `QUESTÃO: ${gameState.currentQ + 1}/10`;
+            gameState.paused = false;
+            // Impulso após responder
+            physics.speed = 1.5;
+        }
+    }, 2000);
+}
+
+function endGame() {
+    gameState.active = false;
+    document.getElementById('screen-game').style.display = 'none';
+    document.getElementById('screen-finish').style.display = 'flex';
+    document.getElementById('fin-result').innerHTML = `
+        <p>Piloto completou a prova!</p>
+        <p style="color:var(--primary); font-weight:900; font-size:2.5rem;">${gameState.score}0 PONTOS</p>
+        <p>Acertos: ${gameState.score} de 10</p>
+    `;
+}
+
+/** ═══════════════════════════════════════════════════════════════
+ *  CONTROLES & LOOP
+ *  ═══════════════════════════════════════════════════════════════ */
+function setupControls() {
+    // Teclado
+    window.onkeydown = (e) => {
+        if(e.key === 'ArrowUp') keys.up = true;
+        if(e.key === 'ArrowDown') keys.down = true;
+        if(e.key === 'ArrowLeft') keys.left = true;
+        if(e.key === 'ArrowRight') keys.right = true;
+    };
+    window.onkeyup = (e) => {
+        if(e.key === 'ArrowUp') keys.up = false;
+        if(e.key === 'ArrowDown') keys.down = false;
+        if(e.key === 'ArrowLeft') keys.left = false;
+        if(e.key === 'ArrowRight') keys.right = false;
+    };
+
+    // Mouse/Touch (Mobile)
+    const setupBtn = (id, key) => {
+        const el = document.getElementById(id);
+        const start = (e) => { e.preventDefault(); keys[key] = true; el.classList.add('active'); };
+        const end = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove('active'); };
+        el.addEventListener('touchstart', start);
+        el.addEventListener('touchend', end);
+        el.addEventListener('mousedown', start);
+        el.addEventListener('mouseup', end);
+    };
+
+    setupBtn('btn-up', 'up');
+    setupBtn('btn-down', 'down');
+    setupBtn('btn-left', 'left');
+    setupBtn('btn-right', 'right');
+}
+
+function animate() {
+    if(!gameState.active) return;
+    requestAnimationFrame(animate);
+    updatePhysics();
+    renderer.render(scene, camera);
+}
+
+// Redimensionamento
+window.addEventListener('resize', () => {
+    if(camera) {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
 });
 
-// ═══════════════════════════════════════════════════════════════
-//  GAME STATE
-// ═══════════════════════════════════════════════════════════════
-let playerData={},gameRunning=false,gamePaused=false;
-let answers=[],currentQIdx=0,correctCount=0;
-let questionShowing=false,questionTimer=null;
-
-// Keys
-const keys={};
-
-// Camera modes
-let overviewMode=false;
-
-// Three.js objects
-let renderer,scene,camera,overviewCamera,activeCamera;
-let playerMesh,botMeshes=[],trackMesh,trackFloor;
-let playerTrailPoints=[],botTrailPoints=[[],[],[]];
-let questionMarkers=[];
-let miniCtx;
-let animId;
-
-// Physics
-let player={x:0,z:0,angle:0,speed:0};
-let bots=[];
-const BOT_COLORS=[0x0055ff,0x00cc44,0xff6600];
-const BOT_NAMES=['WATSON','CRICK','MENDEL'];
-
-// Track params
-const TRACK_RX=380,TRACK_RZ=200,TRACK_W=75;
-
-function getTrackPoint(t){
-  return {x:TRACK_RX*Math.cos(t),z:TRACK_RZ*Math.sin(t)};
-}
-
-// Question trigger positions
-let questionTriggers=[];
-
-function buildTriggers(){
-  questionTriggers=[];
-  for(let i=0;i<10;i++){
-    const t=(i/10)*Math.PI*2+0.4;
-    const p=getTrackPoint(t);
-    questionTriggers.push({x:p.x,z:p.z,triggered:false,qIndex:i,radius:45});
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  THREE.JS INIT
-// ═══════════════════════════════════════════════════════════════
-function initThree(){
-  const canvas=document.getElementById('three-canvas');
-  renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
-  renderer.setSize(window.innerWidth,window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-  renderer.shadowMap.enabled=true;
-  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-  renderer.toneMapping=THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure=1.1;
-
-  scene=new THREE.Scene();
-  scene.background=new THREE.Color(0x050810);
-  scene.fog=new THREE.FogExp2(0x050810,0.0012);
-
-  // ── CAMERAS ──
-  const aspect=window.innerWidth/window.innerHeight;
-  camera=new THREE.PerspectiveCamera(55,aspect,0.1,3000);
-  overviewCamera=new THREE.PerspectiveCamera(60,aspect,0.1,3000);
-  overviewCamera.position.set(0,800,0);
-  overviewCamera.lookAt(0,0,0);
-  activeCamera=camera;
-
-  // ── LIGHTING ──
-  scene.add(new THREE.AmbientLight(0x112244,0.8));
-  const sun=new THREE.DirectionalLight(0xfff5cc,1.4);
-  sun.position.set(200,500,100);
-  sun.castShadow=true;
-  sun.shadow.mapSize.set(2048,2048);
-  sun.shadow.camera.near=1;sun.shadow.camera.far=2000;
-  sun.shadow.camera.left=-600;sun.shadow.camera.right=600;
-  sun.shadow.camera.top=400;sun.shadow.camera.bottom=-400;
-  scene.add(sun);
-  const fill=new THREE.DirectionalLight(0x2244aa,0.4);
-  fill.position.set(-100,200,-200);
-  scene.add(fill);
-  // Point lights along track for atmosphere
-  for(let i=0;i<8;i++){
-    const t=(i/8)*Math.PI*2;
-    const p=getTrackPoint(t);
-    const pt=new THREE.PointLight(i%2?0xffd000:0x0044ff,0.8,200);
-    pt.position.set(p.x,40,p.z);
-    scene.add(pt);
-  }
-
-  buildTrack3D();
-  buildBots3D();
-  buildPlayerCar3D();
-  buildQuestionMarkers3D();
-  buildEnvironment3D();
-
-  miniCtx=document.getElementById('mini-canvas').getContext('2d');
-  window.addEventListener('resize',onResize);
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  BUILD TRACK 3D
-// ═══════════════════════════════════════════════════════════════
-function buildTrack3D(){
-  // Ground plane
-  const groundGeo=new THREE.PlaneGeometry(2400,1600,40,40);
-  const groundMat=new THREE.MeshLambertMaterial({color:0x081208});
-  const ground=new THREE.Mesh(groundGeo,groundMat);
-  ground.rotation.x=-Math.PI/2;
-  ground.position.y=-1;
-  ground.receiveShadow=true;
-  scene.add(ground);
-
-  // Asphalt track — using tube along ellipse path
-  const curve=new THREE.EllipseCurve(0,0,TRACK_RX,TRACK_RZ,0,Math.PI*2,false,0);
-  const pts=curve.getPoints(200);
-  const path=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(p.x,0,p.y)),true);
-  const tubeGeo=new THREE.TubeGeometry(path,200,TRACK_W/2,8,true);
-  const tubeMat=new THREE.MeshLambertMaterial({color:0x1c1c2e,side:THREE.DoubleSide});
-  trackMesh=new THREE.Mesh(tubeGeo,tubeMat);
-  trackMesh.receiveShadow=true;
-  scene.add(trackMesh);
-
-  // Track curb (outer border) — yellow/white stripes effect via ring
-  const outerR=TRACK_RX+TRACK_W/2+4;
-  const outerRZ=TRACK_RZ+TRACK_W/2+4;
-  addTrackBorder(outerR,outerRZ,0xffd000,0.5);
-  const innerR=TRACK_RX-TRACK_W/2-4;
-  const innerRZ=TRACK_RZ-TRACK_W/2-4;
-  addTrackBorder(innerR,innerRZ,0xffd000,0.5);
-
-  // Center line dashed — just visual markers
-  for(let i=0;i<100;i++){
-    if(i%2===0) continue;
-    const t=(i/100)*Math.PI*2;
-    const p=getTrackPoint(t);
-    const lg=new THREE.BoxGeometry(18,0.3,2);
-    const lm=new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:.25});
-    const lmesh=new THREE.Mesh(lg,lm);
-    const t2=(i+0.5)/100*Math.PI*2;
-    const p2=getTrackPoint(t2);
-    const angle=Math.atan2(p2.z-p.z,p2.x-p.x);
-    lmesh.position.set(p.x,0.5,p.z);
-    lmesh.rotation.y=-angle;
-    scene.add(lmesh);
-  }
-
-  // Start/finish line
-  for(let i=0;i<5;i++){
-    for(let j=0;j<4;j++){
-      const sg=new THREE.BoxGeometry(8,0.4,12);
-      const sm=new THREE.MeshLambertMaterial({color:(i+j)%2?0xffffff:0x000000});
-      const s=new THREE.Mesh(sg,sm);
-      s.position.set(TRACK_RX-20+i*8,0.3,j*12-24);
-      scene.add(s);
-    }
-  }
-
-  // Infield grass (slightly elevated)
-  const infieldGeo=new THREE.CircleGeometry(TRACK_RX-TRACK_W/2-10,64);
-  // Actually ellipse — approximate
-  infieldGeo.scale(1,1,TRACK_RZ/TRACK_RX);
-  const infieldMat=new THREE.MeshLambertMaterial({color:0x0a1a0a});
-  const infield=new THREE.Mesh(infieldGeo,infieldMat);
-  infield.rotation.x=-Math.PI/2;
-  infield.position.y=-0.5;
-  scene.add(infield);
-
-  // Grandstand (simple bleachers)
-  for(let i=0;i<3;i++){
-    const bg=new THREE.BoxGeometry(60,20+i*8,15);
-    const bm=new THREE.MeshLambertMaterial({color:0x222244});
-    const bm2=new THREE.Mesh(bg,bm);
-    bm2.position.set(-60+i*60,10+i*4,TRACK_RZ+TRACK_W/2+25+i*5);
-    bm2.receiveShadow=true;
-    scene.add(bm2);
-  }
-}
-
-function addTrackBorder(rx,rz,color,h){
-  const pts=[];
-  for(let i=0;i<=120;i++){
-    const t=(i/120)*Math.PI*2;
-    pts.push(new THREE.Vector3(rx*Math.cos(t),0,rz*Math.sin(t)));
-  }
-  const geo=new THREE.BufferGeometry().setFromPoints(pts);
-  const mat=new THREE.LineBasicMaterial({color,linewidth:1});
-  const line=new THREE.Line(geo,mat);
-  line.position.y=h;
-  scene.add(line);
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  BUILD CAR 3D (low-poly F1)
-// ═══════════════════════════════════════════════════════════════
-function buildCarMesh(bodyColor){
-  const group=new THREE.Group();
-
-  // Body
-  const bodyGeo=new THREE.BoxGeometry(38,6,14);
-  const bodyMat=new THREE.MeshLambertMaterial({color:bodyColor});
-  const body=new THREE.Mesh(bodyGeo,bodyMat);
-  body.position.set(0,5,0);
-  body.castShadow=true;
-  group.add(body);
-
-  // Nose cone
-  const noseGeo=new THREE.CylinderGeometry(1.5,5,16,6);
-  const noseMat=new THREE.MeshLambertMaterial({color:bodyColor});
-  const nose=new THREE.Mesh(noseGeo,noseMat);
-  nose.rotation.z=Math.PI/2;
-  nose.position.set(25,5,0);
-  nose.castShadow=true;
-  group.add(nose);
-
-  // Cockpit
-  const cockpitGeo=new THREE.BoxGeometry(14,5,9);
-  const cockpitMat=new THREE.MeshLambertMaterial({color:0x111122});
-  const cockpit=new THREE.Mesh(cockpitGeo,cockpitMat);
-  cockpit.position.set(-2,9,0);
-  group.add(cockpit);
-
-  // Visor
-  const visorGeo=new THREE.BoxGeometry(10,3,7);
-  const visorMat=new THREE.MeshLambertMaterial({color:0x4488cc,transparent:true,opacity:.7});
-  const visor=new THREE.Mesh(visorGeo,visorMat);
-  visor.position.set(1,11,0);
-  group.add(visor);
-
-  // Front wing
-  const fwGeo=new THREE.BoxGeometry(4,1.5,34);
-  const fwMat=new THREE.MeshLambertMaterial({color:0x222233});
-  const fw=new THREE.Mesh(fwGeo,fwMat);
-  fw.position.set(22,3.5,0);
-  group.add(fw);
-
-  // Rear wing
-  const rwGeo=new THREE.BoxGeometry(4,10,32);
-  const rwMat=new THREE.MeshLambertMaterial({color:0x222233});
-  const rw=new THREE.Mesh(rwGeo,rwMat);
-  rw.position.set(-20,9,0);
-  group.add(rw);
-
-  // Side pods
-  [-1,1].forEach(side=>{
-    const spGeo=new THREE.BoxGeometry(22,5,6);
-    const spMat=new THREE.MeshLambertMaterial({color:bodyColor});
-    const sp=new THREE.Mesh(spGeo,spMat);
-    sp.position.set(-4,3,side*9.5);
-    sp.castShadow=true;
-    group.add(sp);
-  });
-
-  // Wheels x4
-  [
-    [14,2,14],[14,2,-14],[-12,2,14],[-12,2,-14]
-  ].forEach(([wx,wy,wz])=>{
-    const wg=new THREE.CylinderGeometry(5,5,5,12);
-    const wm=new THREE.MeshLambertMaterial({color:0x111111});
-    const w=new THREE.Mesh(wg,wm);
-    w.rotation.x=Math.PI/2;
-    w.position.set(wx,wy,wz);
-    w.castShadow=true;
-    group.add(w);
-    // Tire detail
-    const tg=new THREE.CylinderGeometry(3,3,5.2,12);
-    const tm=new THREE.MeshLambertMaterial({color:0x555566});
-    const ti=new THREE.Mesh(tg,tm);
-    ti.rotation.x=Math.PI/2;
-    ti.position.set(wx,wy,wz);
-    group.add(ti);
-  });
-
-  // Suspension arms
-  [
-    [14,2,10],[14,2,-10],[-12,2,10],[-12,2,-10]
-  ].forEach(([ax,ay,az])=>{
-    const ag=new THREE.BoxGeometry(6,1,8);
-    const am=new THREE.MeshLambertMaterial({color:0x333344});
-    const arm=new THREE.Mesh(ag,am);
-    arm.position.set(ax,ay+2,az);
-    group.add(arm);
-  });
-
-  // Exhaust glow
-  const exGeo=new THREE.CylinderGeometry(1.5,2,3,8);
-  const exMat=new THREE.MeshLambertMaterial({color:0xff4400,emissive:0xff2200,emissiveIntensity:.5});
-  const ex=new THREE.Mesh(exGeo,exMat);
-  ex.rotation.z=Math.PI/2;
-  ex.position.set(-20,5,4);
-  group.add(ex);
-
-  return group;
-}
-
-function buildPlayerCar3D(){
-  playerMesh=buildCarMesh(0xe8001a);
-  playerMesh.position.set(TRACK_RX,3,0);
-  scene.add(playerMesh);
-}
-
-function buildBots3D(){
-  BOT_COLORS.forEach((color,i)=>{
-    const mesh=buildCarMesh(color);
-    mesh.position.set(TRACK_RX,(i+1)*2+3,-(i+1)*20);
-    scene.add(mesh);
-    botMeshes.push(mesh);
-    bots.push({
-      name:BOT_NAMES[i],
-      x:TRACK_RX,
-      z:-(i+1)*20,
-      angle:0,
-      speed:2.8+i*0.35,
-      trackT:-(i+1)*0.1,
-      penalty:0
-    });
-  });
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  QUESTION MARKERS 3D
-// ═══════════════════════════════════════════════════════════════
-function buildQuestionMarkers3D(){
-  questionTriggers.forEach((qt,i)=>{
-    const group=new THREE.Group();
-    // Pole
-    const pg=new THREE.CylinderGeometry(1,1,40,8);
-    const pm=new THREE.MeshLambertMaterial({color:0xffd000});
-    const pole=new THREE.Mesh(pg,pm);
-    pole.position.y=20;
-    group.add(pole);
-    // Box sign
-    const sg=new THREE.BoxGeometry(20,15,3);
-    const sm=new THREE.MeshLambertMaterial({color:0xe8001a,emissive:0x660000,emissiveIntensity:.3});
-    const sign=new THREE.Mesh(sg,sm);
-    sign.position.y=44;
-    group.add(sign);
-    // Glow sphere
-    const gl=new THREE.Mesh(
-      new THREE.SphereGeometry(12,16,16),
-      new THREE.MeshLambertMaterial({color:0xffd000,transparent:true,opacity:.18,emissive:0xffd000,emissiveIntensity:.4})
-    );
-    gl.position.y=5;
-    group.add(gl);
-
-    group.position.set(qt.x,0,qt.z);
-    group._glowSphere=gl;
-    group._isQMarker=true;
-    group._qIdx=i;
-    scene.add(group);
-    questionMarkers.push(group);
-  });
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  ENVIRONMENT
-// ═══════════════════════════════════════════════════════════════
-function buildEnvironment3D(){
-  // Scattered trees (low poly cones)
-  const treePositions=[
-    [-500,0,-100],[500,0,100],[300,0,350],[-300,0,-350],
-    [100,0,450],[-100,0,-450],[550,0,-200],[-550,0,200],
-    [0,0,500],[0,0,-500]
-  ];
-  treePositions.forEach(([x,y,z])=>{
-    const trunk=new THREE.Mesh(
-      new THREE.CylinderGeometry(3,3,20,6),
-      new THREE.MeshLambertMaterial({color:0x3d2b1f})
-    );
-    trunk.position.set(x,10,z);
-    scene.add(trunk);
-    const top=new THREE.Mesh(
-      new THREE.ConeGeometry(14,30,6),
-      new THREE.MeshLambertMaterial({color:0x1a4a1a})
-    );
-    top.position.set(x,30,z);
-    scene.add(top);
-  });
-  // Grid helper (floor grid lines)
-  const gh=new THREE.GridHelper(2400,40,0x112222,0x0a1a0a);
-  gh.position.y=-0.8;
-  scene.add(gh);
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  INPUT
-// ═══════════════════════════════════════════════════════════════
-function setupInput(){
-  document.addEventListener('keydown',e=>{keys[e.key]=true;e.preventDefault&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)&&e.preventDefault();});
-  document.addEventListener('keyup',e=>{keys[e.key]=false;});
-}
-
-function mobilePress(key,down){
-  keys[key]=down;
-  const idMap={'ArrowLeft':'btn-left','ArrowRight':'btn-right','ArrowUp':'btn-accel','ArrowDown':'btn-brake'};
-  const btn=document.getElementById(idMap[key]);
-  if(btn) btn.classList.toggle('pressed',down);
-}
-
-// Gamepad support
-function readGamepad(){
-  const gps=navigator.getGamepads?navigator.getGamepads():[];
-  for(const gp of gps){
-    if(!gp) continue;
-    keys['ArrowLeft']=keys['ArrowLeft']||(gp.axes[0]<-0.4)||(gp.buttons[14]&&gp.buttons[14].pressed);
-    keys['ArrowRight']=keys['ArrowRight']||(gp.axes[0]>0.4)||(gp.buttons[15]&&gp.buttons[15].pressed);
-    keys['ArrowUp']=keys['ArrowUp']||(gp.buttons[7]&&gp.buttons[7].pressed)||(gp.axes[1]<-0.4);
-    keys['ArrowDown']=keys['ArrowDown']||(gp.buttons[6]&&gp.buttons[6].pressed)||(gp.axes[1]>0.4);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  START GAME
-// ═══════════════════════════════════════════════════════════════
-function startGame(){
-  const v=document.getElementById('sel-nome').value;
-  const data=document.getElementById('inp-data').value.trim();
-  if(v===''||data===''){alert('Selecione seu nome e confirme a data!');return;}
-  playerData={...ALUNOS[+v],data,idx:+v};
-  answers=[];currentQIdx=0;correctCount=0;questionShowing=false;overviewMode=false;
-
-  QUESTIONS=buildQuestions();
-
-  document.getElementById('screen-select').style.display='none';
-  document.getElementById('screen-game').style.display='block';
-
-  // Reset player
-  player={x:TRACK_RX,z:0,angle:0,speed:0};
-  bots=BOT_NAMES.map((name,i)=>({
-    name,x:TRACK_RX,z:-(i+1)*20,angle:0,speed:2.8+i*0.35,trackT:-(i+1)*0.1,penalty:0
-  }));
-
-  buildTriggers();
-
-  if(!renderer){
-    initThree();
-    setupInput();
-  } else {
-    // Reset scene objects
-    questionMarkers.forEach(m=>scene.remove(m));
-    questionMarkers.length=0;
-    buildTriggers();
-    buildQuestionMarkers3D();
-    questionTriggers.forEach(q=>q.triggered=false);
-    player={x:TRACK_RX,z:0,angle:0,speed:0};
-    if(playerMesh) playerMesh.position.set(TRACK_RX,3,0);
-    bots.forEach((b,i)=>{
-      b.x=TRACK_RX;b.z=-(i+1)*20;b.angle=0;b.speed=2.8+i*0.35;b.trackT=-(i+1)*0.1;b.penalty=0;
-      if(botMeshes[i]) botMeshes[i].position.set(b.x,3,b.z);
-    });
-  }
-
-  gameRunning=true;gamePaused=false;
-  if(animId) cancelAnimationFrame(animId);
-  gameLoop();
-}
-
-function toggleCameraView(){
-  overviewMode=!overviewMode;
-  activeCamera=overviewMode?overviewCamera:camera;
-  document.getElementById('view-toggle').textContent=overviewMode?'🚗 VISTA PILOTO':'👁️ VISTA GERAL';
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  GAME LOOP
-// ═══════════════════════════════════════════════════════════════
-function gameLoop(){
-  if(!gameRunning) return;
-  readGamepad();
-  if(!gamePaused) update3D();
-  render3D();
-  animId=requestAnimationFrame(gameLoop);
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  UPDATE
-// ═══════════════════════════════════════════════════════════════
-function update3D(){
-  const ACCEL=0.13,BRAKE=0.2,TURN=0.048,FRICTION=0.972,MAX_SPEED=7.5;
-
-  if(keys['ArrowUp']||keys['w']) player.speed=Math.min(player.speed+ACCEL,MAX_SPEED);
-  else if(keys['ArrowDown']||keys['s']) player.speed=Math.max(player.speed-BRAKE,-2.5);
-  else player.speed*=FRICTION;
-
-  if(Math.abs(player.speed)>0.05){
-    const turn=TURN*(Math.abs(player.speed)/MAX_SPEED);
-    if(keys['ArrowLeft']||keys['a']) player.angle+=turn*(player.speed>0?1:-1);
-    if(keys['ArrowRight']||keys['d']) player.angle-=turn*(player.speed>0?1:-1);
-  }
-
-  // Off-track penalty
-  const offTrack=distToTrackCenterXZ(player.x,player.z);
-  if(offTrack>TRACK_W/2+15) player.speed*=0.88;
-
-  player.x+=Math.sin(player.angle)*player.speed;
-  player.z+=Math.cos(player.angle)*player.speed;
-
-  if(playerMesh){
-    playerMesh.position.x=player.x;
-    playerMesh.position.z=player.z;
-    playerMesh.rotation.y=player.angle;
-    // Subtle car lean
-    playerMesh.rotation.z=keys['ArrowLeft']?-0.08:keys['ArrowRight']?0.08:0;
-    // Wheel spin (exhaust glow)
-    if(player.speed>0.5){
-      // animate exhaust (we'll just update emissive intensity)
-    }
-  }
-
-  // Bots
-  bots.forEach((bot,i)=>{
-    if(bot.penalty>0){bot.penalty--;return;}
-    bot.trackT+=bot.speed*0.003;
-    const target=getTrackPoint(bot.trackT);
-    const dx=target.x-bot.x,dz=target.z-bot.z;
-    bot.angle=Math.atan2(dx,dz);
-    bot.x+=Math.sin(bot.angle)*bot.speed;
-    bot.z+=Math.cos(bot.angle)*bot.speed;
-    if(botMeshes[i]){
-      botMeshes[i].position.x=bot.x;
-      botMeshes[i].position.z=bot.z;
-      botMeshes[i].rotation.y=bot.angle;
-    }
-  });
-
-  // Animate question markers
-  questionMarkers.forEach((m,i)=>{
-    if(questionTriggers[i].triggered){m.visible=false;return;}
-    m.visible=true;
-    m.position.y=Math.sin(Date.now()*0.002+i)*3;
-    m.rotation.y+=0.018;
-    if(m._glowSphere){
-      m._glowSphere.material.opacity=0.12+0.1*Math.sin(Date.now()*0.003+i);
-    }
-  });
-
-  // Camera follow (chase cam)
-  if(!overviewMode){
-    const camDist=120,camHeight=55,camLag=0.08;
-    const idealX=player.x-Math.sin(player.angle)*camDist;
-    const idealZ=player.z-Math.cos(player.angle)*camDist;
-    camera.position.x+=(idealX-camera.position.x)*camLag;
-    camera.position.z+=(idealZ-camera.position.z)*camLag;
-    camera.position.y+=(camHeight-camera.position.y)*camLag;
-    camera.lookAt(player.x,8,player.z);
-  }
-
-  // Check question triggers
-  if(!questionShowing){
-    questionTriggers.forEach((qt,i)=>{
-      if(!qt.triggered&&currentQIdx<QUESTIONS.length){
-        const dx=player.x-qt.x,dz=player.z-qt.z;
-        if(Math.sqrt(dx*dx+dz*dz)<qt.radius){
-          qt.triggered=true;
-          showQuestion(currentQIdx);
-        }
-      }
-    });
-  }
-
-  // HUD
-  const spd=Math.abs(player.speed*22)|0;
-  document.getElementById('hud-speed-val').textContent=spd+' km/h';
-  document.getElementById('speed-bar').style.width=Math.min(100,spd/1.65)+'%';
-  document.getElementById('hud-q-val').textContent=currentQIdx+'/'+QUESTIONS.length;
-  document.getElementById('hud-correct-val').textContent=correctCount;
-  const posLabels=['1º','2º','3º','4º'];
-  document.getElementById('hud-pos-val').textContent=posLabels[calcPosition()]||'4º';
-
-  // Mini map
-  renderMiniMap();
-
-  // Check end
-  if(currentQIdx>=QUESTIONS.length&&!questionShowing) endGame();
-}
-
-function distToTrackCenterXZ(x,z){
-  // Approx distance to ellipse edge
-  const nx=x/TRACK_RX,nz=z/TRACK_RZ;
-  const distCenter=Math.sqrt(nx*nx+nz*nz);
-  const surfaceDist=Math.abs(distCenter-1)*Math.min(TRACK_RX,TRACK_RZ);
-  return surfaceDist;
-}
-
-function calcPosition(){
-  const pT=Math.atan2(player.z,player.x);
-  const sorted=[{t:pT,who:'p'},...bots.map((b,i)=>({t:b.trackT%(Math.PI*2),who:i}))];
-  sorted.sort((a,b)=>b.t-a.t);
-  return sorted.findIndex(s=>s.who==='p');
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  RENDER
-// ═══════════════════════════════════════════════════════════════
-function render3D(){
-  renderer.render(scene,activeCamera);
-}
-
-function renderMiniMap(){
-  const mc=document.getElementById('mini-canvas');
-  const mw=mc.width,mh=mc.height;
-  miniCtx.fillStyle='#050508';
-  miniCtx.fillRect(0,0,mw,mh);
-  miniCtx.strokeStyle='#223355';
-  miniCtx.lineWidth=6;
-  miniCtx.beginPath();
-  miniCtx.ellipse(mw/2,mh/2,mw/2-6,mh/2-6,0,0,Math.PI*2);
-  miniCtx.stroke();
-  const sx=mw/2,sy=mh/2,srx=(mw/2-10)/(TRACK_RX+TRACK_W),srz=(mh/2-10)/(TRACK_RZ+TRACK_W);
-  // Q markers
-  questionTriggers.forEach(qt=>{
-    if(qt.triggered)return;
-    miniCtx.fillStyle='#ffd000';
-    miniCtx.beginPath();
-    miniCtx.arc(sx+qt.x*srx,sy+qt.z*srz,3,0,Math.PI*2);
-    miniCtx.fill();
-  });
-  // Bots
-  bots.forEach((b,i)=>{
-    miniCtx.fillStyle=['#0055ff','#00cc44','#ff6600'][i];
-    miniCtx.beginPath();
-    miniCtx.arc(sx+b.x*srx,sy+b.z*srz,3,0,Math.PI*2);
-    miniCtx.fill();
-  });
-  // Player
-  miniCtx.fillStyle='#e8001a';
-  miniCtx.beginPath();
-  miniCtx.arc(sx+player.x*srx,sy+player.z*srz,4.5,0,Math.PI*2);
-  miniCtx.fill();
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  QUESTION SYSTEM
-// ═══════════════════════════════════════════════════════════════
-const Q_TIME=22000;
-
-function showQuestion(idx){
-  if(idx>=QUESTIONS.length)return;
-  questionShowing=true;gamePaused=true;
-  const q=QUESTIONS[idx];
-  document.getElementById('q-num-badge').textContent=q.id;
-  document.getElementById('q-title').textContent='Questão '+q.id+' — Múltipla Escolha';
-  document.getElementById('q-lap').textContent='Checkpoint '+(idx+1)+' de '+QUESTIONS.length;
-  document.getElementById('q-context').textContent=q.context;
-  document.getElementById('q-text').innerHTML=q.text;
-  const letters=['A','B','C','D'];
-  const optsEl=document.getElementById('q-options');
-  optsEl.innerHTML='';
-  q.opts.forEach((opt,i)=>{
-    const d=document.createElement('div');
-    d.className='q-opt';
-    d.innerHTML=`<div class="opt-letter">${letters[i]}</div><span>${opt}</span>`;
-    d.addEventListener('click',()=>answerQuestion(idx,i,d,optsEl));
-    d.addEventListener('touchend',(e)=>{e.preventDefault();answerQuestion(idx,i,d,optsEl);});
-    optsEl.appendChild(d);
-  });
-  document.getElementById('q-feedback').className='q-feedback';
-  document.getElementById('q-feedback').textContent='';
-  document.getElementById('question-overlay').classList.add('show');
-
-  const timerEl=document.getElementById('q-timer-inner');
-  timerEl.style.transition='none';timerEl.style.width='100%';timerEl.style.background='#ffd000';
-  setTimeout(()=>{timerEl.style.transition=`width ${Q_TIME}ms linear`;timerEl.style.width='0%';},50);
-  if(questionTimer)clearTimeout(questionTimer);
-  questionTimer=setTimeout(()=>{if(questionShowing)answerQuestion(idx,-1,null,optsEl);},Q_TIME);
-}
-
-function answerQuestion(idx,chosen,el,optsEl){
-  if(questionTimer)clearTimeout(questionTimer);
-  const q=QUESTIONS[idx];
-  const correct=chosen===q.answer;
-  document.getElementById('q-timer-inner').style.transition='none';
-  const opts=optsEl.querySelectorAll('.q-opt');
-  opts.forEach((o,i)=>{
-    o.style.pointerEvents='none';
-    if(i===q.answer)o.classList.add('correct');
-    else if(i===chosen)o.classList.add('wrong');
-  });
-  const fb=document.getElementById('q-feedback');
-  if(correct){
-    correctCount++;
-    fb.className='q-feedback ok';
-    fb.textContent='✅ CORRETO! Turbo ativado — piloto na frente!';
-    document.getElementById('q-timer-inner').style.background='#00e87a';
-    showToast('✅ RESPOSTA CERTA! TURBO ATIVADO!','gain');
-  } else {
-    fb.className='q-feedback fail';
-    fb.textContent=chosen===-1?'⏱ TEMPO ESGOTADO! Rivais passaram você!':'❌ ERRADO! Os rivais avançaram!';
-    document.getElementById('q-timer-inner').style.background='#e8001a';
-    showToast('❌ ERRO! OS RIVAIS ESTÃO PASSANDO!','lose');
-    bots.forEach(b=>{b.trackT+=0.2;b.penalty=0;});
-    player.speed=Math.max(player.speed-3.5,-1);
-  }
-  answers.push({qId:q.id,chosen,correct});
-  currentQIdx=idx+1;
-  setTimeout(()=>{
-    document.getElementById('question-overlay').classList.remove('show');
-    questionShowing=false;gamePaused=false;
-    if(correct)player.speed=Math.min(player.speed+2.5,6);
-  },2400);
-}
-
-function showToast(msg,type){
-  const toast=document.getElementById('toast');
-  const d=document.createElement('div');
-  d.className='toast-msg '+type;d.textContent=msg;
-  toast.appendChild(d);
-  setTimeout(()=>d.remove(),3000);
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  END GAME
-// ═══════════════════════════════════════════════════════════════
-function endGame(){
-  gameRunning=false;
-  cancelAnimationFrame(animId);
-  document.getElementById('screen-game').style.display='none';
-  const screen=document.getElementById('screen-finish');
-  screen.style.display='flex';
-
-  const pos=calcPosition()+1;
-  const posLabels=['🥇 1º','🥈 2º','🥉 3º','4º'];
-  document.getElementById('fin-pos').textContent=posLabels[Math.min(pos-1,3)];
-
-  const starsArr=['','⭐','⭐⭐','⭐⭐⭐','⭐⭐⭐⭐','⭐⭐⭐⭐⭐','⭐⭐⭐⭐⭐⭐','⭐⭐⭐⭐⭐⭐⭐','⭐⭐⭐⭐⭐⭐⭐⭐','⭐⭐⭐⭐⭐⭐⭐⭐⭐','🏆'];
-  document.getElementById('fin-stars').textContent=starsArr[correctCount]||'';
-  document.getElementById('fin-nota').textContent=`ACERTOS: ${correctCount}/10`;
-
-  const msgs=['Treino é a chave! Tente de novo! 🔧','Bom início de temporada! 🏎','Evoluindo! O pódio está perto! ⚡','Excelente performance! 🥈','CAMPEÃO DA GENÉTICA! Pódio garantido! 🏆'];
-  document.getElementById('fin-detail').textContent=
-    msgs[Math.min(Math.floor(correctCount/2.5),4)]+'\n\nPiloto: '+playerData.nome+' · Nº '+playerData.numero+' · '+playerData.serie;
-}
-
-async function sendResults(){
-  const btn=document.querySelector('.btn-send');
-  btn.disabled=true;
-  const st=document.getElementById('send-status');
-  st.className='loading';st.textContent='📡 TRANSMITINDO DADOS AO PIT WALL...';st.style.display='block';
-  const payload={
-    nome:playerData.nome,numero:playerData.numero,serie:playerData.serie,data:playerData.data,
-    acertos:correctCount,total:10,atividade:'PIT_STOP_GENETICO_3D_9ANO'
-  };
-  answers.forEach(a=>{payload['q'+a.qId]=(a.correct?'CORRETA':'ERRADA');});
-  try{
-    await fetch(GAS_URL,{method:'POST',mode:'no-cors',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body:new URLSearchParams(payload).toString()});
-    st.className='ok';st.textContent='🏁 DADOS ENVIADOS COM SUCESSO AO PIT WALL!';
-  }catch(e){
-    st.className='fail';st.textContent='❌ Erro ao enviar. Verifique a conexão.';btn.disabled=false;
-  }
-}
-
-function restartGame(){
-  document.getElementById('screen-finish').style.display='none';
-  document.getElementById('screen-select').style.display='flex';
-  document.getElementById('send-status').style.display='none';
-  // Clear keys
-  Object.keys(keys).forEach(k=>keys[k]=false);
-}
-
-function onResize(){
-  const w=window.innerWidth,h=window.innerHeight;
-  if(renderer){
-    renderer.setSize(w,h);
-    [camera,overviewCamera].forEach(c=>{c.aspect=w/h;c.updateProjectionMatrix();});
-  }
-}
-
-window.addEventListener('resize',onResize);
-
-// Prevent scroll on touch
-document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 </script>
 </body>
 </html>
