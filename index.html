@@ -3,133 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>PORSCHE GENETIC CUP | 3D</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+<title>PORSCHE GENETIC CUP | 9º ANO</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-:root { --porsche-red: #d5001c; --gold: #b2967d; --dark: #0a0a0b; }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{width:100%;height:100%;overflow:hidden;background:var(--dark);font-family:'Inter',sans-serif;touch-action:none;}
+    :root { --porsche-red: #d5001c; --gold: #b2967d; --bg: #0a0a0b; }
+    *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+    body{ width:100%; height:100%; overflow:hidden; background:var(--bg); font-family:sans-serif; touch-action:none; }
 
-/* --- UI --- */
-#screen-select, #screen-game, #screen-finish { position:fixed; inset:0; z-index:10; transition: 0.5s; }
-#screen-select { background: radial-gradient(circle at center, #1a1a1f 0%, #000 100%); display:flex; flex-direction:column; align-items:center; justify-content: center; }
-#screen-game { display:none; }
-#screen-finish { background:rgba(0,0,0,0.95); display:none; flex-direction:column; align-items:center; justify-content:center; color:#fff; z-index:1000;}
+    /* TELAS */
+    #screen-select, #screen-game, #screen-finish { position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    #screen-select { background: radial-gradient(circle, #1a1a1f, #000); }
+    #screen-game { display:none; pointer-events:none; }
+    #screen-finish { background:rgba(0,0,0,0.9); display:none; color:#fff; z-index:100;}
 
-.porsche-logo { font-family:'Orbitron'; font-weight:900; font-size:2.5rem; letter-spacing:8px; color:#fff; margin-bottom:5px; text-align:center;}
-.sub-title { color: var(--gold); font-family:'Orbitron'; font-size:0.7rem; letter-spacing:4px; margin-bottom:40px;}
+    /* UI ESTILO PORSCHE */
+    .porsche-logo { font-family:'Orbitron'; font-weight:900; font-size:2rem; letter-spacing:8px; color:#fff; margin-bottom:40px; text-align:center;}
+    .glass-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:30px; border-radius:4px; width:90%; max-width:400px; text-align:center;}
+    select { width:100%; padding:15px; background:#000; border:1px solid #333; color:#fff; margin-bottom:20px; font-family:'Orbitron'; }
+    .btn-race { background:var(--porsche-red); color:#fff; border:none; padding:18px; width:100%; font-family:'Orbitron'; font-weight:900; cursor:pointer; letter-spacing:2px; }
 
-.glass-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); backdrop-filter:blur(10px); padding:40px; border-radius:4px; width:90%; max-width:450px; }
-select { width:100%; padding:15px; background:#000; border:1px solid #333; color:#fff; margin-bottom:20px; font-family:'Orbitron'; font-size:0.8rem;}
+    /* HUD NO JOGO */
+    #hud { position:fixed; top:20px; left:20px; color:#fff; font-family:'Orbitron'; z-index:50; pointer-events:none;}
+    .speed-ui { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); text-align:center; color:#fff; z-index:50; pointer-events:none;}
+    .speed-num { font-size:3.5rem; font-weight:900; font-family:'Orbitron'; line-height:1;}
 
-.btn-race { background:var(--porsche-red); color:#fff; border:none; padding:20px; width:100%; font-family:'Orbitron'; font-weight:900; cursor:pointer; letter-spacing:2px; transition:0.3s;}
-.btn-race:hover { background:#ff0022; transform: scale(1.02); }
+    /* CONTROLES MOBILE - CORRIGIDOS */
+    #mobile-ctrl { position:fixed; bottom:20px; left:0; right:0; display:flex; justify-content:space-between; padding:0 20px; pointer-events:none; z-index:100;}
+    .btn-group { display:flex; gap:15px; pointer-events:all; }
+    .btn-ui { width:70px; height:70px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.3); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.2rem; font-weight:bold; }
+    .btn-ui:active { background:var(--porsche-red); }
 
-/* --- HUD --- */
-#hud { position:fixed; top:20px; left:20px; color:#fff; pointer-events:none; font-family:'Orbitron'; z-index:100; }
-.speed-vignette { position:fixed; bottom:40px; right:40px; text-align:right; color:#fff; pointer-events:none;}
-.speed-num { font-size:4rem; font-weight:900; line-height:1; font-family:'Orbitron';}
-
-/* --- CONTROLES --- */
-#mobile-ctrl { position:fixed; bottom:30px; left:30px; right:30px; display:flex; justify-content:space-between; pointer-events:none; z-index:200;}
-.btn-ui { width:80px; height:80px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); border-radius:50%; pointer-events:all; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.5rem; transition:0.1s;}
-.btn-ui:active { background:var(--porsche-red); transform:scale(0.9); }
-
-/* --- QUESTÕES --- */
-#q-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.9); display:none; align-items:center; justify-content:center; z-index:500; padding:20px; }
-.q-box { background:#000; border-top:4px solid var(--porsche-red); padding:40px; width:100%; max-width:600px; color:#fff; }
-.q-opt { border:1px solid #222; padding:20px; margin-top:15px; cursor:pointer; transition:0.3s; font-family:'Orbitron'; font-size:0.8rem;}
-.q-opt:hover { background:#111; border-color: var(--gold); }
-.correct { background: #004411 !important; border-color: #00ff64 !important; }
-.wrong { background: #440000 !important; border-color: #ff0000 !important; }
+    /* QUESTÕES */
+    #q-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.95); display:none; align-items:center; justify-content:center; z-index:200; padding:20px; }
+    .q-box { background:#111; border-top:5px solid var(--porsche-red); padding:30px; width:100%; max-width:500px; color:#fff; }
+    .q-opt { border:1px solid #333; padding:15px; margin-top:10px; cursor:pointer; font-family:'Orbitron'; font-size:0.8rem; }
+    .correct { background: #004411 !important; }
+    .wrong { background: #440000 !important; }
 </style>
 </head>
 <body>
 
 <div id="screen-select">
     <div class="porsche-logo">PORSCHE</div>
-    <div class="sub-title">GENETIC CUP · 9º ANO</div>
     <div class="glass-card">
         <select id="sel-nome">
-            <option value="">-- SELECIONE SEU PILOTO --</option>
-            <option value="NICOLAS PENTEADO">NICOLAS PENTEADO (9º B)</option>
-            <option value="YURI GABRIEL">YURI GABRIEL (9º A)</option>
+            <option value="">-- PILOTO --</option>
+            <option value="NICOLAS PENTEADO">NICOLAS PENTEADO</option>
+            <option value="YURI GABRIEL">YURI GABRIEL</option>
         </select>
         <button class="btn-race" onclick="startRace()">START ENGINE</button>
     </div>
 </div>
 
 <div id="screen-game">
-    <canvas id="stage"></canvas>
+    <canvas id="stage" style="position:fixed; top:0; left:0; width:100%; height:100%;"></canvas>
     <div id="hud">
         <div id="hud-q">CHECKPOINT: 1/10</div>
-        <div id="hud-score" style="color:var(--gold); margin-top:5px;">SCORE: 000</div>
+        <div id="hud-score" style="color:var(--gold);">SCORE: 000</div>
     </div>
-    <div class="speed-vignette">
+    <div class="speed-ui">
         <div class="speed-num" id="spd-val">0</div>
         <div style="letter-spacing:5px; font-size:0.7rem; font-family:'Orbitron';">KM/H</div>
     </div>
     <div id="mobile-ctrl">
-        <div style="display:flex; gap:20px; pointer-events:all;">
+        <div class="btn-group">
             <div class="btn-ui" id="k-left">◀</div>
             <div class="btn-ui" id="k-right">▶</div>
         </div>
-        <div style="display:flex; gap:20px; pointer-events:all;">
+        <div class="btn-group">
             <div class="btn-ui" id="k-down" style="border-radius:10px;">BRAKE</div>
-            <div class="btn-ui" id="k-up" style="border-radius:10px; background:rgba(255,255,255,0.15)">GAS</div>
+            <div class="btn-ui" id="k-up" style="border-radius:10px;">GAS</div>
         </div>
     </div>
 </div>
 
 <div id="q-overlay">
     <div class="q-box">
-        <div style="color:var(--gold); font-size:0.7rem; margin-bottom:10px; font-family:'Orbitron';">TECHNICAL DATA REQUIRED</div>
-        <h2 id="q-txt" style="margin-bottom:30px;"></h2>
+        <h2 id="q-txt" style="margin-bottom:20px;"></h2>
         <div id="q-opts"></div>
     </div>
 </div>
 
 <div id="screen-finish">
-    <div class="porsche-logo">FINISH LINE</div>
-    <div id="fin-res" style="margin:30px 0; font-family:'Orbitron'; text-align:center;"></div>
+    <h1 class="porsche-logo">FINISH!</h1>
+    <div id="fin-res" style="text-align:center; font-family:'Orbitron'; margin-bottom:30px;"></div>
     <button class="btn-race" style="width:200px;" onclick="location.reload()">RETRY</button>
 </div>
 
 <script>
-/** ═══════════════════════════════════════════════════════════════
- *  DATABASE
- *  ═══════════════════════════════════════════════════════════════ */
 const DB = [
-    {q:"Qual organela é responsável por conter o DNA em células eucariontes?", a:["Mitocôndria", "Lisossomo", "Núcleo"], c:2},
-    {q:"A estrutura da molécula de DNA é descrita como:", a:["Uma fita simples", "Uma dupla hélice", "Uma esfera"], c:1},
-    {q:"Qual base nitrogenada faz par com a Adenina no DNA?", a:["Guanina", "Citosina", "Timina"], c:2},
-    {q:"Quantos cromossomos possui uma célula somática humana normal?", a:["23", "46", "44"], c:1},
-    {q:"A unidade básica que forma o DNA é chamada de:", a:["Nucleotídeo", "Proteína", "Aminoácido"], c:0},
-    {q:"A Foto 51 de Rosalind Franklin foi feita usando qual técnica?", a:["Microscópio Óptico", "Difração de Raios-X", "Telescópio"], c:1},
-    {q:"O açúcar presente no DNA é a:", a:["Ribose", "Glicose", "Desoxirribose"], c:2},
-    {q:"Qual dessas bases NÃO existe no DNA (apenas no RNA)?", a:["Uracila", "Timina", "Adenina"], c:0},
-    {q:"Cromossomos que formam pares e possuem a mesma estrutura são:", a:["Cromátides", "Homólogos", "Heterólogos"], c:1},
-    {q:"A herança genética é transmitida através dos:", a:["Gametas", "Sangue", "Músculos"], c:0}
+    {q:"Onde fica o DNA em células eucariontes?", a:["Citoplasma", "Núcleo", "Ribossomo"], c:1},
+    {q:"Estrutura do DNA:", a:["Hélice Simples", "Dupla Hélice", "Tripla"], c:1},
+    {q:"Par da Adenina (A):", a:["Guanina", "Citosina", "Timina"], c:2},
+    {q:"Cromossomos humanos (somática):", a:["23", "46", "92"], c:1},
+    {q:"Unidade básica do DNA:", a:["Nucleotídeo", "Proteína", "Lípídio"], c:0},
+    {q:"Técnica da Foto 51:", a:["Raios-X", "Laser", "Infravermelho"], c:0},
+    {q:"Açúcar do DNA:", a:["Ribose", "Desoxirribose", "Glicose"], c:1},
+    {q:"Base exclusiva do RNA:", a:["Timina", "Uracila", "Citosina"], c:1},
+    {q:"Cromossomos do mesmo par:", a:["Gêmeos", "Homólogos", "Alelos"], c:1},
+    {q:"Transmissão genética via:", a:["Gametas", "Suor", "Saliva"], c:0}
 ];
 
-/** ═══════════════════════════════════════════════════════════════
- *  GAME ENGINE
- *  ═══════════════════════════════════════════════════════════════ */
-let scene, camera, renderer, car, track;
+let scene, camera, renderer, car;
 let keys = { up:0, down:0, left:0, right:0 };
-let carPhys = { 
-    speed: 0, angle: 0, x: 200, z: 0, 
-    accel: 0.015, friction: 0.98, maxSpeed: 3.5, 
-    steer: 0.035, drift: 0, tilt: 0 
-};
+let carPhys = { speed: 0, angle: 0, x: 350, z: 0, accel: 0.015, friction: 0.98, maxSpeed: 3.5 };
 let game = { current: 0, score: 0, active: false, paused: false };
 
-const TRACK_RADIUS_X = 350;
-const TRACK_RADIUS_Z = 220;
-
 function startRace() {
-    if(!document.getElementById('sel-nome').value) return alert("SELECT PILOT");
+    if(!document.getElementById('sel-nome').value) return;
     document.getElementById('screen-select').style.display = 'none';
     document.getElementById('screen-game').style.display = 'block';
     init3D();
@@ -138,191 +120,93 @@ function startRace() {
 function init3D() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x050505);
-    scene.fog = new THREE.Fog(0x050505, 100, 700);
-
-    camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 2000);
+    
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 2000);
     renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('stage'), antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.shadowMap.enabled = true;
 
-    // Lighting (Cinematic)
-    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-    sun.position.set(100, 200, 100);
-    sun.castShadow = true;
+    // LUZ GLOBAL (Evita tela preta)
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+    scene.add(hemiLight);
+
+    const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+    sun.position.set(50, 100, 50);
     scene.add(sun);
-    scene.add(new THREE.AmbientLight(0x404040, 0.5));
 
-    // Ground
-    const grid = new THREE.GridHelper(2000, 50, 0x222222, 0x111111);
-    scene.add(grid);
-
-    createPorsche911();
-    createProTrack();
-    setupInput();
-    game.active = true;
-    loop();
-}
-
-/** ═══════════════════════════════════════════════════════════════
- *  MODELAGEM PORSCHE 911
- *  ═══════════════════════════════════════════════════════════════ */
-function createPorsche911() {
-    const porsche = new THREE.Group();
-
-    // Materiais Premium
-    const bodyMat = new THREE.MeshStandardMaterial({ 
-        color: 0xd5001c, metalness: 0.9, roughness: 0.1 
-    });
-    const glassMat = new THREE.MeshStandardMaterial({ 
-        color: 0x000000, metalness: 1, roughness: 0 
-    });
-    const tireMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-
-    // 1. Corpo principal (Aerodinâmico)
-    const base = new THREE.Mesh(new THREE.BoxGeometry(9, 2.2, 18), bodyMat);
-    base.position.y = 1.6;
-    base.castShadow = true;
-    porsche.add(base);
-
-    // 2. Cockpit Curvado
-    const cabin = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 4.5, 5, 4), glassMat);
-    cabin.rotation.y = Math.PI/4;
-    cabin.scale.set(1, 1, 1.8);
-    cabin.position.set(0, 3.5, -1);
-    porsche.add(cabin);
-
-    // 3. Capô inclinado (Porsche Nose)
-    const nose = new THREE.Mesh(new THREE.BoxGeometry(8.5, 1.5, 6), bodyMat);
-    nose.rotation.x = -0.15;
-    nose.position.set(0, 1.8, 6.5);
-    porsche.add(nose);
-
-    // 4. Faróis Redondos (LED Glow)
-    const headlightGeo = new THREE.SphereGeometry(1, 16, 16);
-    const headlightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    [-1, 1].forEach(s => {
-        const h = new THREE.Mesh(headlightGeo, headlightMat);
-        h.scale.set(1, 1.2, 0.5);
-        h.position.set(s*3, 2.2, 9);
-        porsche.add(h);
-        
-        const light = new THREE.PointLight(0xffffff, 0.8, 20);
-        light.position.set(s*3, 2.2, 10);
-        porsche.add(light);
-    });
-
-    // 5. Aerofólio Traseiro (GT3 Wing)
-    const wingSupport = new THREE.Mesh(new THREE.BoxGeometry(6, 2, 0.5), bodyMat);
-    wingSupport.position.set(0, 3, -7.5);
-    porsche.add(wingSupport);
-    
-    const wingTop = new THREE.Mesh(new THREE.BoxGeometry(10, 0.4, 4), bodyMat);
-    wingTop.position.set(0, 4.2, -8);
-    porsche.add(wingTop);
-
-    // 6. Rodas (x4)
-    const wheelGeo = new THREE.CylinderGeometry(1.6, 1.6, 1.2, 24);
-    wheelGeo.rotation.z = Math.PI/2;
-    [[-4, 1.6, 6], [4, 1.6, 6], [-4, 1.6, -6], [4, 1.6, -6]].forEach((pos, i) => {
-        const w = new THREE.Mesh(wheelGeo, tireMat);
-        w.position.set(...pos);
-        porsche.add(w);
-    });
-
-    car = porsche;
-    scene.add(car);
-}
-
-function createProTrack() {
-    const trackGroup = new THREE.Group();
-    const curve = new THREE.EllipseCurve(0, 0, TRACK_RADIUS_X, TRACK_RADIUS_Z);
-    const pts = curve.getPoints(100);
-    
-    // Asfalto
-    const trackGeo = new THREE.RingGeometry(TRACK_RADIUS_Z-50, TRACK_RADIUS_Z+50, 100);
-    const trackMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1 });
-    track = new THREE.Mesh(trackGeo, trackMat);
-    track.scale.set(TRACK_RADIUS_X/TRACK_RADIUS_Z, 1, 1);
+    // PISTA
+    const trackGeo = new THREE.RingGeometry(170, 270, 64);
+    const trackMat = new THREE.MeshStandardMaterial({ color: 0x151515 });
+    const track = new THREE.Mesh(trackGeo, trackMat);
+    track.scale.set(350/220, 1, 1);
     track.rotation.x = -Math.PI/2;
     scene.add(track);
 
-    // Linhas de Checkpoint
-    for(let i=0; i<10; i++) {
-        const a = (i/10) * Math.PI * 2;
-        const gate = new THREE.Mesh(
-            new THREE.BoxGeometry(100, 2, 5),
-            new THREE.MeshBasicMaterial({ color: 0xd5001c, transparent:true, opacity:0.3 })
-        );
-        gate.position.set(Math.cos(a)*TRACK_RADIUS_X, 0.1, Math.sin(a)*TRACK_RADIUS_Z);
-        gate.lookAt(0,0,0);
-        scene.add(gate);
-    }
+    // CHÃO AUXILIAR
+    scene.add(new THREE.GridHelper(2000, 40, 0x222222, 0x111111));
+
+    createCar();
+    setupInput();
+    game.active = true;
+    animate();
 }
 
-/** ═══════════════════════════════════════════════════════════════
- *  PHYSICS & LOOP
- *  ═══════════════════════════════════════════════════════════════ */
-function loop() {
+function createCar() {
+    car = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(8, 2, 16), new THREE.MeshStandardMaterial({color: 0xd5001c}));
+    body.position.y = 1.5;
+    car.add(body);
+    
+    // Teto
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(7, 2, 8), new THREE.MeshStandardMaterial({color: 0x000000}));
+    roof.position.set(0, 3, -1);
+    car.add(roof);
+
+    car.position.set(carPhys.x, 0, carPhys.z);
+    scene.add(car);
+}
+
+function animate() {
     if(!game.active) return;
-    requestAnimationFrame(loop);
+    requestAnimationFrame(animate);
 
     if(!game.paused) {
-        // Gas / Brake
         if(keys.up) carPhys.speed += carPhys.accel;
         else if(keys.down) carPhys.speed -= carPhys.accel * 2;
         else carPhys.speed *= carPhys.friction;
 
         carPhys.speed = Math.max(-1, Math.min(carPhys.speed, carPhys.maxSpeed));
 
-        // Steering & Drift
         if(Math.abs(carPhys.speed) > 0.1) {
-            const dir = carPhys.speed > 0 ? 1 : -1;
-            if(keys.left) { 
-                carPhys.angle += carPhys.steer * dir; 
-                carPhys.tilt = THREE.MathUtils.lerp(carPhys.tilt, 0.1, 0.1);
-            }
-            else if(keys.right) { 
-                carPhys.angle -= carPhys.steer * dir;
-                carPhys.tilt = THREE.MathUtils.lerp(carPhys.tilt, -0.1, 0.1);
-            }
-            else {
-                carPhys.tilt = THREE.MathUtils.lerp(carPhys.tilt, 0, 0.1);
-            }
+            let dir = carPhys.speed > 0 ? 1 : -1;
+            if(keys.left) carPhys.angle += 0.04 * dir;
+            if(keys.right) carPhys.angle -= 0.04 * dir;
         }
 
-        // Apply Movement
         carPhys.x += Math.sin(carPhys.angle) * carPhys.speed;
         carPhys.z += Math.cos(carPhys.angle) * carPhys.speed;
 
         car.position.set(carPhys.x, 0, carPhys.z);
         car.rotation.y = carPhys.angle;
-        car.rotation.z = carPhys.tilt; // Body Roll
 
-        // Camera Follow (Smooth)
-        const camX = carPhys.x - Math.sin(carPhys.angle) * 45;
-        const camZ = carPhys.z - Math.cos(carPhys.angle) * 45;
-        camera.position.lerp(new THREE.Vector3(camX, 20, camZ), 0.1);
+        // Câmera Follow Suave
+        const camDist = 45;
+        camera.position.x = carPhys.x - Math.sin(carPhys.angle) * camDist;
+        camera.position.z = carPhys.z - Math.cos(carPhys.angle) * camDist;
+        camera.position.y = 18;
         camera.lookAt(carPhys.x, 5, carPhys.z);
 
-        document.getElementById('spd-val').textContent = Math.round(Math.abs(carPhys.speed) * 92);
-        
-        checkCollision();
+        document.getElementById('spd-val').textContent = Math.round(Math.abs(carPhys.speed) * 90);
+        checkCheck();
     }
-
     renderer.render(scene, camera);
 }
 
-function checkCollision() {
-    const angle = Math.atan2(carPhys.z, carPhys.x);
-    const targetIdx = game.current;
-    const targetAngle = (targetIdx / 10) * Math.PI * 2;
-    
-    const gateX = Math.cos(targetAngle) * TRACK_RADIUS_X;
-    const gateZ = Math.sin(targetAngle) * TRACK_RADIUS_Z;
-    const d = Math.sqrt(Math.pow(carPhys.x - gateX, 2) + Math.pow(carPhys.z - gateZ, 2));
-
-    if(d < 40) showQ();
+function checkCheck() {
+    const angle = (game.current / 10) * Math.PI * 2;
+    const gx = Math.cos(angle) * 350;
+    const gz = Math.sin(angle) * 220;
+    const d = Math.sqrt((carPhys.x-gx)**2 + (carPhys.z-gz)**2);
+    if(d < 50) showQ();
 }
 
 function showQ() {
@@ -331,33 +215,24 @@ function showQ() {
     document.getElementById('q-txt').textContent = q.q;
     const opts = document.getElementById('q-opts');
     opts.innerHTML = '';
-    
     q.a.forEach((o, i) => {
         const div = document.createElement('div');
         div.className = 'q-opt';
         div.textContent = o;
         div.onclick = () => {
-            const btns = document.querySelectorAll('.q-opt');
-            btns.forEach(b => b.style.pointerEvents = 'none');
-            if(i === q.c) {
-                div.classList.add('correct');
-                game.score += 100;
-            } else {
-                div.classList.add('wrong');
-                btns[q.c].classList.add('correct');
-            }
+            if(i === q.c) { div.classList.add('correct'); game.score += 10; }
+            else { div.classList.add('wrong'); }
             setTimeout(() => {
                 game.current++;
-                if(game.current >= 10) {
-                    finish();
-                } else {
+                if(game.current >= 10) finish();
+                else {
                     document.getElementById('q-overlay').style.display = 'none';
                     document.getElementById('hud-q').textContent = `CHECKPOINT: ${game.current+1}/10`;
                     document.getElementById('hud-score').textContent = `SCORE: ${game.score}`;
                     game.paused = false;
-                    carPhys.speed = 2.5; // Boost
+                    carPhys.speed = 2;
                 }
-            }, 2000);
+            }, 1000);
         };
         opts.appendChild(div);
     });
@@ -369,44 +244,21 @@ function finish() {
     document.getElementById('screen-game').style.display = 'none';
     document.getElementById('q-overlay').style.display = 'none';
     document.getElementById('screen-finish').style.display = 'flex';
-    document.getElementById('fin-res').innerHTML = `
-        PILOTO: ${document.getElementById('sel-nome').value}<br>
-        SCORE FINAL: ${game.score}<br>
-        PERFORMANCE: ${game.score/10}%
-    `;
+    document.getElementById('fin-res').innerHTML = `SCORE: ${game.score}`;
 }
 
-/** ═══════════════════════════════════════════════════════════════
- *  INPUTS
- *  ═══════════════════════════════════════════════════════════════ */
 function setupInput() {
-    window.onkeydown = (e) => {
-        if(e.key=='ArrowUp') keys.up=1; if(e.key=='ArrowDown') keys.down=1;
-        if(e.key=='ArrowLeft') keys.left=1; if(e.key=='ArrowRight') keys.right=1;
+    window.onkeydown = (e) => { if(e.key=='ArrowUp') keys.up=1; if(e.key=='ArrowDown') keys.down=1; if(e.key=='ArrowLeft') keys.left=1; if(e.key=='ArrowRight') keys.right=1; };
+    window.onkeyup = (e) => { if(e.key=='ArrowUp') keys.up=0; if(e.key=='ArrowDown') keys.down=0; if(e.key=='ArrowLeft') keys.left=0; if(e.key=='ArrowRight') keys.right=0; };
+    const bind = (id, k) => { 
+        const el = document.getElementById(id); 
+        el.ontouchstart = (e) => { e.preventDefault(); keys[k]=1; };
+        el.ontouchend = (e) => { e.preventDefault(); keys[k]=0; };
+        el.onmousedown = () => keys[k]=1; 
+        el.onmouseup = () => keys[k]=0; 
     };
-    window.onkeyup = (e) => {
-        if(e.key=='ArrowUp') keys.up=0; if(e.key=='ArrowDown') keys.down=0;
-        if(e.key=='ArrowLeft') keys.left=0; if(e.key=='ArrowRight') keys.right=0;
-    };
-
-    const bind = (id, k) => {
-        const el = document.getElementById(id);
-        el.ontouchstart = () => keys[k]=1;
-        el.ontouchend = () => keys[k]=0;
-        el.onmousedown = () => keys[k]=1;
-        el.onmouseup = () => keys[k]=0;
-    };
-    bind('k-up', 'up'); bind('k-down', 'down');
-    bind('k-left', 'left'); bind('k-right', 'right');
+    bind('k-up', 'up'); bind('k-down', 'down'); bind('k-left', 'left'); bind('k-right', 'right');
 }
-
-window.onresize = () => {
-    if(camera) {
-        camera.aspect = window.innerWidth/window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-};
 </script>
 </body>
 </html>
