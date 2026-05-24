@@ -3,54 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>PORSCHE GENETIC CUP | 9º ANO</title>
+<title>PORSCHE GENETIC CUP | PRO 3D</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-    :root { --porsche-red: #d5001c; --gold: #b2967d; --bg: #0a0a0b; }
+    :root { --porsche-red: #d5001c; --gold: #b2967d; }
     *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
-    body{ width:100%; height:100%; overflow:hidden; background:var(--bg); font-family:sans-serif; touch-action:none; }
+    body{ width:100%; height:100%; overflow:hidden; background:#000; font-family:sans-serif; touch-action:none; }
 
-    /* TELAS */
-    #screen-select, #screen-game, #screen-finish { position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-    #screen-select { background: radial-gradient(circle, #1a1a1f, #000); }
+    /* UI SCREENS */
+    #screen-select, #screen-game, #screen-finish { position:fixed; inset:0; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    #screen-select { background: linear-gradient(to bottom, #050505, #1a1a1a); }
     #screen-game { display:none; pointer-events:none; }
-    #screen-finish { background:rgba(0,0,0,0.9); display:none; color:#fff; z-index:100;}
+    #screen-finish { background:rgba(0,0,0,0.9); display:none; color:#fff; }
 
-    /* UI ESTILO PORSCHE */
-    .porsche-logo { font-family:'Orbitron'; font-weight:900; font-size:2rem; letter-spacing:8px; color:#fff; margin-bottom:40px; text-align:center;}
-    .glass-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:30px; border-radius:4px; width:90%; max-width:400px; text-align:center;}
-    select { width:100%; padding:15px; background:#000; border:1px solid #333; color:#fff; margin-bottom:20px; font-family:'Orbitron'; }
-    .btn-race { background:var(--porsche-red); color:#fff; border:none; padding:18px; width:100%; font-family:'Orbitron'; font-weight:900; cursor:pointer; letter-spacing:2px; }
+    .porsche-logo { font-family:'Orbitron'; font-weight:900; font-size:2.5rem; color:#fff; letter-spacing:10px; margin-bottom:10px; text-shadow: 0 0 20px rgba(255,255,255,0.3);}
+    .glass-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); backdrop-filter:blur(10px); padding:40px; border-radius:4px; width:90%; max-width:400px; text-align:center;}
+    select { width:100%; padding:15px; background:#000; border:1px solid #333; color:#fff; margin-bottom:20px; font-family:'Orbitron'; outline:none; }
+    .btn-race { background:var(--porsche-red); color:#fff; border:none; padding:20px; width:100%; font-family:'Orbitron'; font-weight:900; cursor:pointer; letter-spacing:2px; transition:0.3s; }
+    .btn-race:hover { background:#ff0022; transform:scale(1.05); }
 
-    /* HUD NO JOGO */
-    #hud { position:fixed; top:20px; left:20px; color:#fff; font-family:'Orbitron'; z-index:50; pointer-events:none;}
-    .speed-ui { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); text-align:center; color:#fff; z-index:50; pointer-events:none;}
-    .speed-num { font-size:3.5rem; font-weight:900; font-family:'Orbitron'; line-height:1;}
+    /* HUD */
+    #hud { position:fixed; top:25px; left:25px; color:#fff; font-family:'Orbitron'; z-index:50; pointer-events:none;}
+    .speed-ui { position:fixed; bottom:40px; left:50%; transform:translateX(-50%); text-align:center; color:#fff; z-index:50; pointer-events:none;}
+    .speed-num { font-size:4rem; font-weight:900; font-family:'Orbitron'; line-height:1; color: var(--porsche-red);}
 
-    /* CONTROLES MOBILE - CORRIGIDOS */
-    #mobile-ctrl { position:fixed; bottom:20px; left:0; right:0; display:flex; justify-content:space-between; padding:0 20px; pointer-events:none; z-index:100;}
-    .btn-group { display:flex; gap:15px; pointer-events:all; }
-    .btn-ui { width:70px; height:70px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.3); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.2rem; font-weight:bold; }
-    .btn-ui:active { background:var(--porsche-red); }
+    /* CONTROLES */
+    #mobile-ctrl { position:fixed; bottom:30px; left:0; right:0; display:flex; justify-content:space-between; padding:0 30px; pointer-events:none; z-index:200;}
+    .btn-group { display:flex; gap:20px; pointer-events:all; }
+    .btn-ui { width:80px; height:80px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.5rem; transition:0.1s; backdrop-filter:blur(5px); }
+    .btn-ui:active { background:var(--porsche-red); transform:scale(0.9); }
 
-    /* QUESTÕES */
-    #q-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.95); display:none; align-items:center; justify-content:center; z-index:200; padding:20px; }
-    .q-box { background:#111; border-top:5px solid var(--porsche-red); padding:30px; width:100%; max-width:500px; color:#fff; }
-    .q-opt { border:1px solid #333; padding:15px; margin-top:10px; cursor:pointer; font-family:'Orbitron'; font-size:0.8rem; }
-    .correct { background: #004411 !important; }
-    .wrong { background: #440000 !important; }
+    /* QUESTIONS */
+    #q-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.9); display:none; align-items:center; justify-content:center; z-index:500; padding:20px; }
+    .q-box { background:#000; border-top:5px solid var(--porsche-red); padding:40px; width:100%; max-width:600px; color:#fff; box-shadow: 0 0 50px rgba(213, 0, 28, 0.2);}
+    .q-opt { border:1px solid #222; padding:20px; margin-top:15px; cursor:pointer; transition:0.3s; font-family:'Orbitron'; }
+    .q-opt:hover { background:#111; border-color:var(--gold); }
+    .correct { background: #004411 !important; border-color: #00ff64 !important; }
+    .wrong { background: #440000 !important; border-color: #ff0000 !important; }
 </style>
 </head>
 <body>
 
 <div id="screen-select">
     <div class="porsche-logo">PORSCHE</div>
+    <div style="color:var(--gold); letter-spacing:5px; font-size:0.7rem; margin-bottom:40px;">GENETIC CUP · RACING SIMULATOR</div>
     <div class="glass-card">
         <select id="sel-nome">
-            <option value="">-- PILOTO --</option>
-            <option value="NICOLAS PENTEADO">NICOLAS PENTEADO</option>
-            <option value="YURI GABRIEL">YURI GABRIEL</option>
+            <option value="">-- SELECT YOUR PILOT --</option>
+            <option value="NICOLAS PENTEADO">NICOLAS PENTEADO (9º B)</option>
+            <option value="YURI GABRIEL">YURI GABRIEL (9º A)</option>
         </select>
         <button class="btn-race" onclick="startRace()">START ENGINE</button>
     </div>
@@ -59,12 +61,12 @@
 <div id="screen-game">
     <canvas id="stage" style="position:fixed; top:0; left:0; width:100%; height:100%;"></canvas>
     <div id="hud">
-        <div id="hud-q">CHECKPOINT: 1/10</div>
-        <div id="hud-score" style="color:var(--gold);">SCORE: 000</div>
+        <div id="hud-q" style="font-size:1.2rem;">CHECKPOINT: 1/10</div>
+        <div id="hud-score" style="color:var(--gold); margin-top:5px;">SCORE: 000</div>
     </div>
     <div class="speed-ui">
         <div class="speed-num" id="spd-val">0</div>
-        <div style="letter-spacing:5px; font-size:0.7rem; font-family:'Orbitron';">KM/H</div>
+        <div style="letter-spacing:5px; font-size:0.8rem; font-family:'Orbitron';">KM/H</div>
     </div>
     <div id="mobile-ctrl">
         <div class="btn-group">
@@ -72,114 +74,225 @@
             <div class="btn-ui" id="k-right">▶</div>
         </div>
         <div class="btn-group">
-            <div class="btn-ui" id="k-down" style="border-radius:10px;">BRAKE</div>
-            <div class="btn-ui" id="k-up" style="border-radius:10px;">GAS</div>
+            <div class="btn-ui" id="k-down" style="border-radius:15px; font-size:0.8rem;">BRAKE</div>
+            <div class="btn-ui" id="k-up" style="border-radius:15px; font-size:0.8rem; background:rgba(255,255,255,0.15);">GAS</div>
         </div>
     </div>
 </div>
 
 <div id="q-overlay">
     <div class="q-box">
-        <h2 id="q-txt" style="margin-bottom:20px;"></h2>
+        <div style="color:var(--gold); font-size:0.7rem; margin-bottom:10px; font-family:'Orbitron';">GENETIC SYSTEM ANALYSIS</div>
+        <h2 id="q-txt" style="margin-bottom:30px; font-family:sans-serif; line-height:1.4;"></h2>
         <div id="q-opts"></div>
     </div>
 </div>
 
 <div id="screen-finish">
-    <h1 class="porsche-logo">FINISH!</h1>
-    <div id="fin-res" style="text-align:center; font-family:'Orbitron'; margin-bottom:30px;"></div>
-    <button class="btn-race" style="width:200px;" onclick="location.reload()">RETRY</button>
+    <h1 class="porsche-logo">FINISH LINE</h1>
+    <div id="fin-res" style="text-align:center; font-family:'Orbitron'; margin:40px 0; font-size:1.5rem;"></div>
+    <button class="btn-race" style="width:250px;" onclick="location.reload()">NEW RACE</button>
 </div>
 
 <script>
+/** ═══════════════════════════════════════════════════════════════
+ *  SIMULATOR ENGINE DATA
+ *  ═══════════════════════════════════════════════════════════════ */
 const DB = [
-    {q:"Onde fica o DNA em células eucariontes?", a:["Citoplasma", "Núcleo", "Ribossomo"], c:1},
-    {q:"Estrutura do DNA:", a:["Hélice Simples", "Dupla Hélice", "Tripla"], c:1},
-    {q:"Par da Adenina (A):", a:["Guanina", "Citosina", "Timina"], c:2},
-    {q:"Cromossomos humanos (somática):", a:["23", "46", "92"], c:1},
-    {q:"Unidade básica do DNA:", a:["Nucleotídeo", "Proteína", "Lípídio"], c:0},
-    {q:"Técnica da Foto 51:", a:["Raios-X", "Laser", "Infravermelho"], c:0},
-    {q:"Açúcar do DNA:", a:["Ribose", "Desoxirribose", "Glicose"], c:1},
-    {q:"Base exclusiva do RNA:", a:["Timina", "Uracila", "Citosina"], c:1},
-    {q:"Cromossomos do mesmo par:", a:["Gêmeos", "Homólogos", "Alelos"], c:1},
-    {q:"Transmissão genética via:", a:["Gametas", "Suor", "Saliva"], c:0}
+    {q:"Qual organela celular guarda o material genético (DNA)?", a:["Mitocôndria", "Núcleo", "Ribossomo"], c:1},
+    {q:"A estrutura da molécula de DNA é uma:", a:["Hélice simples", "Dupla hélice", "Cadeia linear"], c:1},
+    {q:"No DNA, a Adenina (A) sempre se liga com a:", a:["Citosina (C)", "Guanina (G)", "Timina (T)"], c:2},
+    {q:"O número de cromossomos em uma célula humana comum é:", a:["23", "46", "92"], c:1},
+    {q:"O que é um gene?", a:["Uma proteína do sangue", "Um segmento de DNA com informação", "Uma célula nervosa"], c:1},
+    {q:"Qual açúcar compõe o DNA?", a:["Glicose", "Ribose", "Desoxirribose"], c:2},
+    {q:"Qual base nitrogenada existe apenas no RNA?", a:["Uracila", "Timina", "Adenina"], c:0},
+    {q:"Cromossomos que formam pares idênticos são chamados:", a:["Homólogos", "Análogos", "Bifásicos"], c:0},
+    {q:"Quem descobriu a estrutura do DNA em 1953?", a:["Mendel", "Darwin", "Watson e Crick"], c:2},
+    {q:"A transmissão de características dos pais para filhos é:", a:["Hereditariedade", "Evolução", "Mitose"], c:0}
 ];
 
-let scene, camera, renderer, car;
+let scene, camera, renderer, car, wheels = [];
 let keys = { up:0, down:0, left:0, right:0 };
-let carPhys = { speed: 0, angle: 0, x: 350, z: 0, accel: 0.015, friction: 0.98, maxSpeed: 3.5 };
+let carPhys = { speed: 0, angle: 0, x: 340, z: 0, accel: 0.02, friction: 0.985, maxSpeed: 4.5, tilt: 0 };
 let game = { current: 0, score: 0, active: false, paused: false };
 
+const TRACK_RADIUS_X = 350;
+const TRACK_RADIUS_Z = 230;
+
 function startRace() {
-    if(!document.getElementById('sel-nome').value) return;
+    if(!document.getElementById('sel-nome').value) return alert("SELECT PILOT");
     document.getElementById('screen-select').style.display = 'none';
     document.getElementById('screen-game').style.display = 'block';
-    init3D();
+    initSimulator();
 }
 
-function init3D() {
+function initSimulator() {
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x050505);
-    
-    camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 2000);
+    scene.background = new THREE.Color(0x87ceeb); // Sky Blue
+    scene.fog = new THREE.Fog(0x87ceeb, 200, 1000);
+
+    camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 3000);
     renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('stage'), antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
 
-    // LUZ GLOBAL (Evita tela preta)
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+    // LIGHTING (Real-time shadows)
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
     scene.add(hemiLight);
 
-    const sun = new THREE.DirectionalLight(0xffffff, 0.8);
-    sun.position.set(50, 100, 50);
+    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+    sun.position.set(100, 200, 100);
+    sun.castShadow = true;
+    sun.shadow.camera.left = -500;
+    sun.shadow.camera.right = 500;
+    sun.shadow.camera.top = 500;
+    sun.shadow.camera.bottom = -500;
+    sun.shadow.mapSize.width = 2048;
+    sun.shadow.mapSize.height = 2048;
     scene.add(sun);
 
-    // PISTA
-    const trackGeo = new THREE.RingGeometry(170, 270, 64);
-    const trackMat = new THREE.MeshStandardMaterial({ color: 0x151515 });
-    const track = new THREE.Mesh(trackGeo, trackMat);
-    track.scale.set(350/220, 1, 1);
-    track.rotation.x = -Math.PI/2;
-    scene.add(track);
-
-    // CHÃO AUXILIAR
-    scene.add(new THREE.GridHelper(2000, 40, 0x222222, 0x111111));
-
-    createCar();
+    createEnvironment();
+    createPorsche911();
     setupInput();
     game.active = true;
-    animate();
+    loop();
 }
 
-function createCar() {
+/** ═══════════════════════════════════════════════════════════════
+ *  WORLD BUILDING (GTA STYLE)
+ *  ═══════════════════════════════════════════════════════════════ */
+function createEnvironment() {
+    // Grass
+    const grassGeo = new THREE.PlaneGeometry(3000, 3000);
+    const grassMat = new THREE.MeshStandardMaterial({ color: 0x2d5e2d });
+    const grass = new THREE.Mesh(grassGeo, grassMat);
+    grass.rotation.x = -Math.PI/2;
+    grass.receiveShadow = true;
+    scene.add(grass);
+
+    // Track Asphalt
+    const trackGeo = new THREE.RingGeometry(180, 280, 100);
+    const trackMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 });
+    const trackMesh = new THREE.Mesh(trackGeo, trackMat);
+    trackMesh.scale.set(TRACK_RADIUS_X/230, 1, 1);
+    trackMesh.rotation.x = -Math.PI/2;
+    trackMesh.position.y = 0.05;
+    trackMesh.receiveShadow = true;
+    scene.add(trackMesh);
+
+    // Zebra / Curbs (Red and White)
+    const curbGeo = new THREE.TorusGeometry(282, 3, 16, 100);
+    const curbMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const curb = new THREE.Mesh(curbGeo, curbMat);
+    curb.scale.set(TRACK_RADIUS_X/230, 1, 0.01);
+    curb.rotation.x = -Math.PI/2;
+    scene.add(curb);
+
+    // Scenery: Buildings and Trees
+    for(let i=0; i<40; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const r = 450 + Math.random() * 300;
+        const x = Math.cos(a) * r;
+        const z = Math.sin(a) * r;
+
+        if(Math.random() > 0.5) {
+            // Building
+            const h = 20 + Math.random() * 80;
+            const bGeo = new THREE.BoxGeometry(20, h, 20);
+            const bMat = new THREE.MeshStandardMaterial({ color: 0x444444 });
+            const b = new THREE.Mesh(bGeo, bMat);
+            b.position.set(x, h/2, z);
+            b.castShadow = true;
+            b.receiveShadow = true;
+            scene.add(b);
+        } else {
+            // Tree
+            const t = new THREE.Group();
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(2,2,10), new THREE.MeshStandardMaterial({color:0x4b2d1f}));
+            const leaves = new THREE.Mesh(new THREE.ConeGeometry(10,25,8), new THREE.MeshStandardMaterial({color:0x1a331a}));
+            leaves.position.y = 15;
+            trunk.position.y = 5;
+            t.add(trunk); t.add(leaves);
+            t.position.set(x, 0, z);
+            t.castShadow = true;
+            scene.add(t);
+        }
+    }
+}
+
+function createPorsche911() {
     car = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(8, 2, 16), new THREE.MeshStandardMaterial({color: 0xd5001c}));
-    body.position.y = 1.5;
-    car.add(body);
-    
-    // Teto
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(7, 2, 8), new THREE.MeshStandardMaterial({color: 0x000000}));
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd5001c, metalness: 0.8, roughness: 0.2 });
+    const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+
+    // Chassis / Body
+    const main = new THREE.Mesh(new THREE.BoxGeometry(9, 2.5, 18), bodyMat);
+    main.position.y = 1.8;
+    main.castShadow = true;
+    car.add(main);
+
+    // Cabin (Curved top)
+    const roof = new THREE.Mesh(new THREE.SphereGeometry(4.5, 16, 16, 0, Math.PI*2, 0, Math.PI/2));
+    roof.scale.set(1, 0.6, 1.8);
     roof.position.set(0, 3, -1);
+    roof.material = new THREE.MeshStandardMaterial({ color: 0x050505, metalness: 1 });
     car.add(roof);
+
+    // Headlights
+    const lightGeo = new THREE.CylinderGeometry(1.2, 1.2, 1, 16);
+    lightGeo.rotation.x = Math.PI/2;
+    const lightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    [[-3, 2.5, 8.5], [3, 2.5, 8.5]].forEach(p => {
+        const h = new THREE.Mesh(lightGeo, lightMat);
+        h.position.set(p[0], p[1], p[2]);
+        car.add(h);
+    });
+
+    // Spoiler
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(10, 0.5, 4), bodyMat);
+    wing.position.set(0, 4.2, -8);
+    car.add(wing);
+
+    // Wheels
+    const wGeo = new THREE.CylinderGeometry(1.8, 1.8, 1.2, 24);
+    wGeo.rotation.z = Math.PI/2;
+    [[-4.5, 1.8, 6], [4.5, 1.8, 6], [-4.5, 1.8, -6], [4.5, 1.8, -6]].forEach(p => {
+        const w = new THREE.Mesh(wGeo, blackMat);
+        w.position.set(p[0], p[1], p[2]);
+        car.add(w);
+        wheels.push(w);
+    });
 
     car.position.set(carPhys.x, 0, carPhys.z);
     scene.add(car);
 }
 
-function animate() {
+/** ═══════════════════════════════════════════════════════════════
+ *  SIMULATION LOOP
+ *  ═══════════════════════════════════════════════════════════════ */
+function loop() {
     if(!game.active) return;
-    requestAnimationFrame(animate);
+    requestAnimationFrame(loop);
 
     if(!game.paused) {
+        // Physics
         if(keys.up) carPhys.speed += carPhys.accel;
-        else if(keys.down) carPhys.speed -= carPhys.accel * 2;
+        else if(keys.down) carPhys.speed -= carPhys.accel * 2.5;
         else carPhys.speed *= carPhys.friction;
 
         carPhys.speed = Math.max(-1, Math.min(carPhys.speed, carPhys.maxSpeed));
 
         if(Math.abs(carPhys.speed) > 0.1) {
-            let dir = carPhys.speed > 0 ? 1 : -1;
-            if(keys.left) carPhys.angle += 0.04 * dir;
-            if(keys.right) carPhys.angle -= 0.04 * dir;
+            const dir = carPhys.speed > 0 ? 1 : -1;
+            if(keys.left) { 
+                carPhys.angle += 0.04 * dir; 
+                carPhys.tilt = THREE.MathUtils.lerp(carPhys.tilt, 0.15, 0.1);
+            }
+            else if(keys.right) { 
+                carPhys.angle -= 0.04 * dir; 
+                carPhys.tilt = THREE.MathUtils.lerp(carPhys.tilt, -0.15, 0.1);
+            }
+            else { carPhys.tilt = THREE.MathUtils.lerp(carPhys.tilt, 0, 0.1); }
         }
 
         carPhys.x += Math.sin(carPhys.angle) * carPhys.speed;
@@ -187,71 +300,101 @@ function animate() {
 
         car.position.set(carPhys.x, 0, carPhys.z);
         car.rotation.y = carPhys.angle;
+        car.rotation.z = carPhys.tilt;
 
-        // Câmera Follow Suave
-        const camDist = 45;
-        camera.position.x = carPhys.x - Math.sin(carPhys.angle) * camDist;
-        camera.position.z = carPhys.z - Math.cos(carPhys.angle) * camDist;
-        camera.position.y = 18;
+        // Animate Wheels
+        wheels.forEach(w => w.rotation.x += carPhys.speed * 0.5);
+
+        // Advanced Camera (Follow + Shake + Smooth)
+        const camDist = 50;
+        const targetCamX = carPhys.x - Math.sin(carPhys.angle) * camDist;
+        const targetCamZ = carPhys.z - Math.cos(carPhys.angle) * camDist;
+        
+        camera.position.lerp(new THREE.Vector3(targetCamX, 22, targetCamZ), 0.1);
+        
+        // Shake at high speed
+        if(carPhys.speed > 3) {
+            camera.position.x += (Math.random() - 0.5) * 0.2;
+            camera.position.y += (Math.random() - 0.5) * 0.2;
+        }
+        
         camera.lookAt(carPhys.x, 5, carPhys.z);
 
-        document.getElementById('spd-val').textContent = Math.round(Math.abs(carPhys.speed) * 90);
-        checkCheck();
+        document.getElementById('spd-val').textContent = Math.round(Math.abs(carPhys.speed) * 94);
+        checkCheckpoints();
     }
     renderer.render(scene, camera);
 }
 
-function checkCheck() {
+function checkCheckpoints() {
     const angle = (game.current / 10) * Math.PI * 2;
-    const gx = Math.cos(angle) * 350;
-    const gz = Math.sin(angle) * 220;
+    const gx = Math.cos(angle) * TRACK_RADIUS_X;
+    const gz = Math.sin(angle) * TRACK_RADIUS_Z;
     const d = Math.sqrt((carPhys.x-gx)**2 + (carPhys.z-gz)**2);
-    if(d < 50) showQ();
+    
+    if(d < 60 && !game.paused) showQuestion();
 }
 
-function showQ() {
+function showQuestion() {
     game.paused = true;
     const q = DB[game.current];
     document.getElementById('q-txt').textContent = q.q;
     const opts = document.getElementById('q-opts');
     opts.innerHTML = '';
+    
     q.a.forEach((o, i) => {
         const div = document.createElement('div');
         div.className = 'q-opt';
         div.textContent = o;
         div.onclick = () => {
-            if(i === q.c) { div.classList.add('correct'); game.score += 10; }
-            else { div.classList.add('wrong'); }
+            const btns = document.querySelectorAll('.q-opt');
+            btns.forEach(b => b.style.pointerEvents = 'none');
+            if(i === q.c) {
+                div.classList.add('correct');
+                game.score += 100;
+            } else {
+                div.classList.add('wrong');
+                btns[q.c].classList.add('correct');
+            }
             setTimeout(() => {
                 game.current++;
-                if(game.current >= 10) finish();
+                if(game.current >= 10) finishRace();
                 else {
                     document.getElementById('q-overlay').style.display = 'none';
                     document.getElementById('hud-q').textContent = `CHECKPOINT: ${game.current+1}/10`;
                     document.getElementById('hud-score').textContent = `SCORE: ${game.score}`;
                     game.paused = false;
-                    carPhys.speed = 2;
+                    carPhys.speed = 3; // N2O Boost
                 }
-            }, 1000);
+            }, 1500);
         };
         opts.appendChild(div);
     });
     document.getElementById('q-overlay').style.display = 'flex';
 }
 
-function finish() {
+function finishRace() {
     game.active = false;
     document.getElementById('screen-game').style.display = 'none';
     document.getElementById('q-overlay').style.display = 'none';
     document.getElementById('screen-finish').style.display = 'flex';
-    document.getElementById('fin-res').innerHTML = `SCORE: ${game.score}`;
+    document.getElementById('fin-res').innerHTML = `PILOT: ${document.getElementById('sel-nome').value}<br>FINAL SCORE: ${game.score}`;
 }
 
+/** ═══════════════════════════════════════════════════════════════
+ *  CONTROLS SYSTEM
+ *  ═══════════════════════════════════════════════════════════════ */
 function setupInput() {
-    window.onkeydown = (e) => { if(e.key=='ArrowUp') keys.up=1; if(e.key=='ArrowDown') keys.down=1; if(e.key=='ArrowLeft') keys.left=1; if(e.key=='ArrowRight') keys.right=1; };
-    window.onkeyup = (e) => { if(e.key=='ArrowUp') keys.up=0; if(e.key=='ArrowDown') keys.down=0; if(e.key=='ArrowLeft') keys.left=0; if(e.key=='ArrowRight') keys.right=0; };
+    window.onkeydown = (e) => { 
+        if(e.key=='ArrowUp') keys.up=1; if(e.key=='ArrowDown') keys.down=1;
+        if(e.key=='ArrowLeft') keys.left=1; if(e.key=='ArrowRight') keys.right=1;
+    };
+    window.onkeyup = (e) => { 
+        if(e.key=='ArrowUp') keys.up=0; if(e.key=='ArrowDown') keys.down=0;
+        if(e.key=='ArrowLeft') keys.left=0; if(e.key=='ArrowRight') keys.right=0;
+    };
     const bind = (id, k) => { 
-        const el = document.getElementById(id); 
+        const el = document.getElementById(id);
         el.ontouchstart = (e) => { e.preventDefault(); keys[k]=1; };
         el.ontouchend = (e) => { e.preventDefault(); keys[k]=0; };
         el.onmousedown = () => keys[k]=1; 
@@ -259,6 +402,14 @@ function setupInput() {
     };
     bind('k-up', 'up'); bind('k-down', 'down'); bind('k-left', 'left'); bind('k-right', 'right');
 }
+
+window.onresize = () => {
+    if(camera) {
+        camera.aspect = window.innerWidth/window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+};
 </script>
 </body>
 </html>
